@@ -1,6 +1,6 @@
 ---
 category: GIT
-title: Gihtub Pages
+title: Github Pages avec Vite
 date: 2024-11-21
 author: Romagny13
 ---
