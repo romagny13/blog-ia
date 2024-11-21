@@ -14,15 +14,25 @@ export const LayoutContainer = styled.div`
 
 export const LeftNav = styled.nav`
   width: 250px;
-  background-color: ${(props) => props.theme.secondaryBackground};
-  color: ${(props) => props.theme.primaryText};
   padding: 20px;
   height: 100%;
   position: sticky;
   top: 0;
   min-height: 100vh;
-  border-right: 1px solid ${(props) => props.theme.border};
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: 2px; /* largeur de la bordure */
+    background: linear-gradient(
+      to bottom,
+      rgba(229, 231, 235, 1),
+      rgba(229, 231, 235, 0)
+    );
+  }
 `;
 
 export const Article = styled.article`

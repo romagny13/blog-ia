@@ -4,15 +4,27 @@ import { ChevronRight, ChevronDown } from "lucide-react";
 
 const Sidebar = styled.aside`
   width: 280px;
-  background-color: ${(props) => props.theme.sidebarBackground};
   padding: 15px;
   position: sticky;
   top: 0;
   right: 0;
-  border-left: 1px solid ${(props) => props.theme.border};
   height: 100vh; /* La sidebar occupe toute la hauteur de la fenêtre */
   overflow-y: auto; /* Activer le scrolling vertical */
   overflow-x: hidden; /* Empêcher le scrolling horizontal */
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 2px; /* largeur de la bordure */
+    background: linear-gradient(
+      to bottom,
+      rgba(229, 231, 235, 1),
+      rgba(229, 231, 235, 0)
+    ); 
+  }
 `;
 
 const TocTitle = styled.h3`
