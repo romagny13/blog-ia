@@ -1,0 +1,60 @@
+pre {
+  position: relative;
+  background: #f4f4f4; // Very light gray background
+  border: 1px solid #e0e0e0;
+  padding: 1em;
+  border-radius: 8px;
+  overflow-x: auto;
+  line-height: 1.6;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+code {
+  font-family: "Fira Code", "Cascadia Code", monospace;
+  font-size: 0.9rem;
+  color: #2c3e50; // Deep charcoal for text
+}
+
+// Highlight.js light theme styling
+.hljs {
+  display: block;
+  background: #f9fafb; // Ultra-soft gray
+  color: #2c3e50;
+}
+
+.hljs-keyword {
+  color: #3182ce; // Professional blue for keywords
+}
+
+.hljs-string {
+  color: #38a169; // Soft green for strings
+}
+
+.hljs-comment {
+  color: #718096; // Muted gray for comments
+}
+
+.hljs-function {
+  color: #2c5282; // Deep blue for function names
+}
+
+.hljs-number {
+  color: #1a202c; // Dark gray for numbers
+}
+
+.copy-button {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.copy-button:hover {
+  background-color: #0056b3;
+}
