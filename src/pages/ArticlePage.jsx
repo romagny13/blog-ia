@@ -6,9 +6,9 @@ import slugify from "slugify";
 import { Article } from "../components/StyledComponents";
 import CollapsibleTOC from "../components/CollapsibleTOC";
 
-function ArticlePage({ articles }) {
-  const navigate = useNavigate();
+function ArticlePage({ articles, onSlugChange }) {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const [htmlContent, setHtmlContent] = useState("");
   const [toc, setToc] = useState([]);
 
@@ -26,27 +26,68 @@ function ArticlePage({ articles }) {
             } catch (__) {}
           }
           return "";
-        }
+        },
       });
 
       let content = md.render(article.content);
 
       const newToc = [];
+      let parentStack = [];
+      const idMap = new Map(); // Suivi des occurrences des IDs
+
       content = content.replace(
-        /<h([2-6])>(.*?)<\/h\1>/g,
+        /<h([1-6])>(.*?)<\/h\1>/g,
         (match, level, title) => {
-          const id = slugify(title, { lower: true });
-          newToc.push({ id, title, level });
-          return `<h${level} id="${id}">${title}</h${level}>`;
+          let baseId = slugify(title, { lower: true });
+
+          // Vérifier si cet ID a déjà été utilisé
+          const count = idMap.get(baseId) || 0;
+          const uniqueId = count > 0 ? `${baseId}-${count}` : baseId;
+          idMap.set(baseId, count + 1); // Incrémenter le compteur
+
+          const tocItem = {
+            id: uniqueId,
+            title,
+            level: parseInt(level),
+            children: [],
+          };
+
+          // Gestion de la hiérarchie
+          while (
+            parentStack.length &&
+            parentStack[parentStack.length - 1].level >= tocItem.level
+          ) {
+            parentStack.pop(); // Retour en arrière si le niveau est inférieur ou égal
+          }
+
+          if (parentStack.length > 0) {
+            // Ajouter en tant qu'enfant du dernier élément parent
+            parentStack[parentStack.length - 1].children.push(tocItem);
+          } else {
+            // Pas de parent, ajouter au niveau supérieur
+            newToc.push(tocItem);
+          }
+
+          // Ajouter le nouvel élément au stack
+          parentStack.push(tocItem);
+
+          return `<h${level} id="${uniqueId}">${title}</h${level}>`;
         }
       );
+
+      // console.log(newToc);
 
       setHtmlContent(content);
       setToc(newToc);
     } else {
       navigate("/", { replace: true });
     }
-  }, [slug, articles]);
+  }, [articles]);
+
+  useEffect(() => {
+    // console.log("slug changed", slug);
+    onSlugChange(slug);
+  }, [slug]);
 
   useEffect(() => {
     document.querySelectorAll("pre code").forEach((block) => {
@@ -58,15 +99,6 @@ function ArticlePage({ articles }) {
         const copyButton = document.createElement("button");
         copyButton.className = "copy-button";
         copyButton.textContent = "Copier";
-        copyButton.style.position = "absolute";
-        copyButton.style.top = "5px";
-        copyButton.style.right = "5px";
-        copyButton.style.backgroundColor = "#007bff";
-        copyButton.style.color = "white";
-        copyButton.style.border = "none";
-        copyButton.style.padding = "5px 10px";
-        copyButton.style.borderRadius = "3px";
-        copyButton.style.cursor = "pointer";
 
         // Action de copie
         copyButton.addEventListener("click", () => {

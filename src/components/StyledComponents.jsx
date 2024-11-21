@@ -56,4 +56,10 @@ export const StyledLink = styled.a`
   flex-grow: 1;
   text-decoration: none;
   color: ${(props) => props.theme.primaryText};
+
+  &.active {
+    font-weight: bold;
+    border-left: 3px solid ${(props) => props.theme.activeLink};
+    padding-left: 12px;
+  }
 `;

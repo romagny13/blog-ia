@@ -1,4 +1,10 @@
-import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Link,
+  useParams,
+} from "react-router-dom";
 import { useState, useEffect } from "react";
 import { loadMarkdownFiles } from "./utils/markdownLoader";
 import { ThemeProvider } from "styled-components";
@@ -8,17 +14,18 @@ import GlobalStyle from "./GlobalStyle";
 import {
   LayoutContainer,
   LeftNav,
-  StyledLink
+  StyledLink,
 } from "./components/StyledComponents";
 import ArticlePage from "./pages/ArticlePage";
 
-export const theme = {
+const theme = {
   // Enhanced Readability Light Theme
   background: "#FFFFFF", // Pure white
   secondaryBackground: "#F9FAFB", // Ultra-soft gray
   primaryText: "#1F2937", // Deep charcoal
   secondaryText: "#4B5563", // Dark gray
   link: "#E91E63", // Clear, vibrant blue
+  activeLink: "#E91E63",
   button: "#FF4081",
   buttonHover: "#C2185B",
   border: "#E5E7EB", // Soft light gray
@@ -28,23 +35,20 @@ export const theme = {
   code: "#E9ECEF", // Light gray for code blocks
   codeText: "#2C3E50", // Dark text for code
   gradientStart: "#FFFFFF",
-  gradientEnd: "#F9FAFB"
+  gradientEnd: "#F9FAFB",
 };
 
 function Router({ children }) {
   // Récupère le basename depuis vite.config.js
   const basename = import.meta.env.BASE_URL;
 
-  return (
-    <BrowserRouter basename={basename}>
-      {children}
-    </BrowserRouter>
-  );
+  return <BrowserRouter basename={basename}>{children}</BrowserRouter>;
 }
 
 function App() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeSlug, setActiveSlug] = useState(null);
 
   const fetchArticles = async () => {
     setLoading(true);
@@ -64,7 +68,7 @@ function App() {
       setCategories(
         Object.entries(categories).map(([name, articles]) => ({
           name,
-          articles
+          articles,
         }))
       );
       // console.log(loadedArticles);
@@ -78,6 +82,8 @@ function App() {
   useEffect(() => {
     fetchArticles();
   }, []);
+
+  const handleSlugChange = (slug) => setActiveSlug(slug);
 
   if (loading) return <div>Chargement des articles...</div>;
 
@@ -96,6 +102,7 @@ function App() {
                     key={article.slug}
                     as={Link}
                     to={`/article/${article.slug}`}
+                    className={activeSlug == article.slug ? "active" : ""}
                   >
                     {article.frontmatter.title}
                   </StyledLink>
@@ -110,7 +117,12 @@ function App() {
             />
             <Route
               path="/article/:slug"
-              element={<ArticlePage articles={categories} />}
+              element={
+                <ArticlePage
+                  articles={categories}
+                  onSlugChange={handleSlugChange}
+                />
+              }
             />
           </Routes>
         </LayoutContainer>

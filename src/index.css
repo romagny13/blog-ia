@@ -14,8 +14,7 @@ code {
   font-size: 0.9rem;
   color: #2c3e50; // Deep charcoal for text
 }
-
-// Highlight.js light theme styling
+/* 
 .hljs {
   display: block;
   background: #f9fafb; // Ultra-soft gray
@@ -40,13 +39,13 @@ code {
 
 .hljs-number {
   color: #1a202c; // Dark gray for numbers
-}
+} */
 
 .copy-button {
   position: absolute;
   top: 5px;
   right: 5px;
-  background-color: #007bff;
+  background-color: #e91e63;
   color: white;
   border: none;
   padding: 5px 10px;
@@ -56,5 +55,5 @@ code {
 }
 
 .copy-button:hover {
-  background-color: #0056b3;
+  background-color: #c2185b;
 }

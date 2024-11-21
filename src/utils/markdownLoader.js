@@ -1,5 +1,4 @@
 export async function loadMarkdownFiles() {
-  console.log("load");
   const modules = import.meta.glob("../docs/*.md", { as: "raw" });
   const articles = await Promise.all(
     Object.entries(modules).map(async ([path, loader]) => {
@@ -22,7 +21,7 @@ export async function loadMarkdownFiles() {
       return {
         slug: path.replace("../docs/", "").replace(".md", ""),
         frontmatter,
-        content: markdownContent
+        content: markdownContent,
       };
     })
   );
