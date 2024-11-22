@@ -21,7 +21,7 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
-  base: "/nom-de-votre-repo/" // Remplacez par le nom de votre repository
+  base: "/nom-de-votre-repo/", // Remplacez par le nom de votre repository
 });
 ```
 
@@ -213,11 +213,11 @@ Voici un exemple de configuration :
 
 ```js
 // vite.config.js
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
 export default defineConfig({
-  base: '/nom-de-votre-repo/', // Remplacez par le nom de votre dépôt GitHub
+  base: "/nom-de-votre-repo/", // Remplacez par le nom de votre dépôt GitHub
   plugins: [react()],
 });
 ```
@@ -227,14 +227,14 @@ export default defineConfig({
 Ajoutez le **`basename`** correspondant au sous-dossier dans votre configuration React Router. Par exemple, si votre application est dans `/nom-de-votre-repo/`, configurez React Router comme suit :
 
 ```jsx
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 function App() {
   return (
     <Router basename="/nom-de-votre-repo">
       <Routes>
         {/* Gestion des 404 */}
-        <Route path="*" element={<NotFoundPage />} /> 
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Router>
   );
@@ -255,13 +255,105 @@ Une fois votre projet configuré, déployez-le sur **GitHub Pages**. Si vous uti
 
 ---
 
-## Résumé des configurations importantes
+### Résumé des configurations importantes
 
-| Fichier              | Configuration clé                                                                 |
-|----------------------|-----------------------------------------------------------------------------------|
-| `vite.config.js`     | `base: '/nom-du-repo/'`                                                          |
-| `public/404.html`    | Redirection vers `/nom-de-votre-repo/index.html`                                           |
-| `App.js`             | `basename="/nom-du-repo"` dans `BrowserRouter`                                   |
-| GitHub Actions       | Utilisation d'un workflow pour déployer automatiquement sur GitHub Pages         |
+| Fichier           | Configuration clé                                                        |
+| ----------------- | ------------------------------------------------------------------------ |
+| `vite.config.js`  | `base: '/nom-du-repo/'`                                                  |
+| `public/404.html` | Redirection vers `/nom-de-votre-repo/index.html`                         |
+| `App.js`          | `basename="/nom-du-repo"` dans `BrowserRouter`                           |
+| GitHub Actions    | Utilisation d'un workflow pour déployer automatiquement sur GitHub Pages |
 
 Avec cette configuration, votre application devrait fonctionner correctement sur **GitHub Pages**, même avec des routes dynamiques. 🎉
+
+### 7. Alternative avec redirection
+
+#### 1. **Page HTML 404 avec redirection (GitHub Pages)**
+
+Lorsque l'utilisateur tente d'accéder à une URL qui ne correspond pas à un fichier existant sur GitHub Pages (par exemple, un chemin dynamique généré par React Router), GitHub Pages renvoie une erreur 404. Pour éviter cela, on peut utiliser une page 404 personnalisée pour rediriger l'utilisateur vers `index.html` tout en passant le chemin demandé (et son fragment, si applicable).
+
+Voici un exemple de code à mettre dans la page **`404.html`** (qui doit se trouver dans le répertoire `public` de votre projet) :
+
+```html
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>404 Not Found</title>
+    <script type="text/javascript">
+      // Récupère le chemin actuel et le fragment (ancre)
+      const currentPath = window.location.pathname;
+      const currentHash = window.location.hash;
+
+      // Tronque le chemin si nécessaire
+      const truncatedPath = currentPath.replace(/^\/nom-de-votre-repo/, "");
+
+      // Construit l'URL redirigée avec les informations
+      const targetURL = `/nom-de-votre-repo/index.html?redirect=${encodeURIComponent(
+        truncatedPath
+      )}${currentHash}`;
+
+      // Redirige vers index.html avec les informations ajoutées
+      window.location.replace(targetURL);
+    </script>
+  </head>
+  <body>
+    <h1>Page non trouvée</h1>
+    <p>Redirection en cours...</p>
+  </body>
+</html>
+```
+
+##### Explication :
+
+- **`window.location.pathname`** : récupère le chemin de l'URL actuelle.
+- **`window.location.hash`** : récupère le fragment (ancre) de l'URL.
+- **`currentPath.replace(/^\/nom-de-votre-repo/, "")`** : supprime le préfixe `/nom-de-votre-repo` du chemin si nécessaire, afin de naviguer correctement vers le chemin demandé sans cette partie.
+- **`window.location.replace(targetURL)`** : redirige l'utilisateur vers `index.html`, en ajoutant un paramètre `redirect` dans l'URL, qui contient le chemin demandé.
+
+---
+
+#### 2. **Gestion de la redirection dans React avec `useEffect`**
+
+Dans votre application React, vous pouvez gérer la redirection de manière dynamique en utilisant le `useEffect` pour intercepter le paramètre `redirect` passé dans l'URL. Le paramètre `redirect` contient le chemin que l'utilisateur souhaitait atteindre, et vous pouvez naviguer vers ce chemin tout en maintenant l'intégrité de l'ancre (fragment).
+
+Voici un exemple de code à intégrer dans votre composant principal ou dans un composant de routage :
+
+```javascript
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+
+const RedirectHandler = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Récupère le paramètre `redirect` depuis l'URL
+    const params = new URLSearchParams(window.location.search);
+    const redirectPath = params.get("redirect");
+
+    if (redirectPath) {
+      // Décoder le chemin avant de naviguer
+      const decodedPath = decodeURIComponent(
+        redirectPath + window.location.hash
+      );
+
+      // Navigue vers le chemin demandé
+      navigate(decodedPath, { replace: true });
+    }
+  }, [navigate]);
+
+  return null; // Ce composant ne rend rien, il est uniquement utilisé pour la redirection
+};
+
+export default RedirectHandler;
+```
+
+##### Explication :
+
+- **`URLSearchParams(window.location.search)`** : permet d'extraire les paramètres de l'URL, notamment `redirect`.
+- **`decodeURIComponent(redirectPath + window.location.hash)`** : décode le chemin et le fragment de l'URL pour s'assurer qu'ils sont correctement interprétés.
+
+Dans cet exemple, le composant `RedirectHandler` gère la redirection après la réception du paramètre `redirect` dans l'URL. Lorsqu'une redirection est détectée, il utilise le `navigate` de React Router pour naviguer vers le chemin souhaité, en tenant compte des ancres.
+
+---
