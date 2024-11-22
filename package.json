@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "homepage": "https://romagny13.github.io/blog-ia",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

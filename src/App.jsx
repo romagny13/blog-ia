@@ -4,6 +4,7 @@ import {
   Route,
   Link,
   useParams,
+  Navigate,
 } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { loadMarkdownFiles } from "./utils/markdownLoader";
@@ -114,7 +115,11 @@ function App() {
           <Routes>
             <Route
               path="/"
-              element={<p>Sélectionnez un article pour voir son contenu.</p>}
+              element={
+                <p style={{ margin: "10px" }}>
+                  Sélectionnez un article pour voir son contenu.
+                </p>
+              }
             />
             <Route
               path="/article/:slug"
@@ -125,6 +130,7 @@ function App() {
                 />
               }
             />
+            <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </LayoutContainer>
       </Router>
