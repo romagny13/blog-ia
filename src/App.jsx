@@ -40,7 +40,6 @@ const theme = {
   gradientEnd: "#F9FAFB",
 };
 
-
 function App() {
   const navigate = useNavigate();
 
@@ -83,8 +82,12 @@ function App() {
     const redirectPath = params.get("redirect");
 
     if (redirectPath) {
+      // Décoder le chemin avant de naviguer
+      const decodedPath = decodeURIComponent(
+        redirectPath + window.location.hash
+      );
       // Navigue vers le chemin demandé
-      navigate(redirectPath + window.location.hash, { replace: true });
+      navigate(decodedPath, { replace: true });
     }
   }, [navigate]);
 
@@ -100,45 +103,45 @@ function App() {
     <ThemeProvider theme={theme}>
       <GlobalStyle />
       <Header />
-        <LayoutContainer>
-          <LeftNav>
-            {categories.map((category) => (
-              <div key={category.name}>
-                <h3>{category.name}</h3>
-                {category.articles.map((article) => (
-                  <StyledLink
-                    key={article.slug}
-                    as={Link}
-                    to={`/article/${article.slug}`}
-                    className={activeSlug == article.slug ? "active" : ""}
-                  >
-                    {article.frontmatter.title}
-                  </StyledLink>
-                ))}
-              </div>
-            ))}
-          </LeftNav>
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <p style={{ margin: "10px" }}>
-                  Sélectionnez un article pour voir son contenu.
-                </p>
-              }
-            />
-            <Route
-              path="/article/:slug"
-              element={
-                <ArticlePage
-                  articles={categories}
-                  onSlugChange={handleSlugChange}
-                />
-              }
-            />
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
-        </LayoutContainer>
+      <LayoutContainer>
+        <LeftNav>
+          {categories.map((category) => (
+            <div key={category.name}>
+              <h3>{category.name}</h3>
+              {category.articles.map((article) => (
+                <StyledLink
+                  key={article.slug}
+                  as={Link}
+                  to={`/article/${article.slug}`}
+                  className={activeSlug == article.slug ? "active" : ""}
+                >
+                  {article.frontmatter.title}
+                </StyledLink>
+              ))}
+            </div>
+          ))}
+        </LeftNav>
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <p style={{ margin: "10px" }}>
+                Sélectionnez un article pour voir son contenu.
+              </p>
+            }
+          />
+          <Route
+            path="/article/:slug"
+            element={
+              <ArticlePage
+                articles={categories}
+                onSlugChange={handleSlugChange}
+              />
+            }
+          />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </LayoutContainer>
     </ThemeProvider>
   );
 }
