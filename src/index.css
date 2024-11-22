@@ -4,7 +4,7 @@ html {
 
 pre {
   position: relative;
-  background: #f4f4f4; // Very light gray background
+  background: #f4f4f4;
   border: 1px solid #e0e0e0;
   padding: 1em;
   border-radius: 8px;
@@ -16,8 +16,9 @@ pre {
 code {
   font-family: "Fira Code", "Cascadia Code", monospace;
   font-size: 0.9rem;
-  color: #2c3e50; // Deep charcoal for text
+  color: #2c3e50;
 }
+
 /* 
 .hljs {
   display: block;

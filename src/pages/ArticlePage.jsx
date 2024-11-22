@@ -1,14 +1,17 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Remarkable } from "remarkable";
-import hljs from "highlight.js";
-import slugify from "slugify";
 import { Article } from "../components/StyledComponents";
 import CollapsibleTOC from "../components/CollapsibleTOC";
+import {
+  convertMarkdownToHtmlWithSyntaxHighlighting,
+  generateTOCFromHtml,
+} from "../utils/convertUtils";
+import DocumentToolbar from "../components/DocumentToolbar";
 
 function ArticlePage({ articles, onSlugChange }) {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const [currentArticle, setCurrentArticle] = useState(null);
   const [htmlContent, setHtmlContent] = useState("");
   const [toc, setToc] = useState([]);
 
@@ -20,67 +23,13 @@ function ArticlePage({ articles, onSlugChange }) {
       .find((a) => a.slug === slug);
 
     if (article) {
-      const md = new Remarkable({
-        highlight: (str, lang) => {
-          if (lang && hljs.getLanguage(lang)) {
-            try {
-              return hljs.highlight(str, { language: lang }).value;
-            } catch (__) {}
-          }
-          return "";
-        },
-      });
-
-      let content = md.render(article.content);
-
-      const newToc = [];
-      let parentStack = [];
-      const idMap = new Map(); // Suivi des occurrences des IDs
-
-      content = content.replace(
-        /<h([1-6])>(.*?)<\/h\1>/g,
-        (match, level, title) => {
-          let baseId = slugify(title, { lower: true });
-
-          // Vérifier si cet ID a déjà été utilisé
-          const count = idMap.get(baseId) || 0;
-          const uniqueId = count > 0 ? `${baseId}-${count}` : baseId;
-          idMap.set(baseId, count + 1); // Incrémenter le compteur
-
-          const tocItem = {
-            id: uniqueId,
-            title,
-            level: parseInt(level),
-            children: [],
-          };
-
-          // Gestion de la hiérarchie
-          while (
-            parentStack.length &&
-            parentStack[parentStack.length - 1].level >= tocItem.level
-          ) {
-            parentStack.pop(); // Retour en arrière si le niveau est inférieur ou égal
-          }
-
-          if (parentStack.length > 0) {
-            // Ajouter en tant qu'enfant du dernier élément parent
-            parentStack[parentStack.length - 1].children.push(tocItem);
-          } else {
-            // Pas de parent, ajouter au niveau supérieur
-            newToc.push(tocItem);
-          }
-
-          // Ajouter le nouvel élément au stack
-          parentStack.push(tocItem);
-
-          return `<h${level} id="${uniqueId}">${title}</h${level}>`;
-        }
-      );
-
-      // console.log(newToc);
+      let html = convertMarkdownToHtmlWithSyntaxHighlighting(article.content);
+      const { toc, content } = generateTOCFromHtml(html);
+      // console.log(toc);
 
       setHtmlContent(content);
-      setToc(newToc);
+      setToc(toc);
+      setCurrentArticle(article);
     } else {
       navigate("/", { replace: true });
     }
@@ -129,6 +78,7 @@ function ArticlePage({ articles, onSlugChange }) {
     <>
       <Article dangerouslySetInnerHTML={{ __html: htmlContent }} />
       <CollapsibleTOC toc={toc} />
+      {currentArticle && <DocumentToolbar article={currentArticle} />}
     </>
   );
 }
