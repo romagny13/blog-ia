@@ -5,13 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>404 Not Found</title>
     <script type="text/javascript">
-      // Récupère le chemin demandé et le fragment
+      // Récupère le chemin actuel et le fragment (ancre)
       const currentPath = window.location.pathname;
       const currentHash = window.location.hash;
 
+      // Tronque le chemin si nécessaire (retirer "/blog-ia")
+      const truncatedPath = currentPath.replace(/^\/blog-ia/, "");
+
       // Construit l'URL redirigée avec les informations
       const targetURL = `/blog-ia/index.html?redirect=${encodeURIComponent(
-        currentPath
+        truncatedPath
       )}${currentHash}`;
 
       // Redirige vers index.html avec les informations ajoutées
