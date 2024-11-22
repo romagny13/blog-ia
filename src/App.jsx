@@ -80,6 +80,7 @@ function App() {
     // Récupère le paramètre `redirect` depuis l'URL
     const params = new URLSearchParams(window.location.search);
     const redirectPath = params.get("redirect");
+    sessionStorage.setItem("redirectPath", redirectPath);
 
     if (redirectPath) {
       // Décoder le chemin avant de naviguer
