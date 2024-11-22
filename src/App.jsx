@@ -42,9 +42,9 @@ const theme = {
 function Router({ children }) {
   // Récupère le basename depuis vite.config.js
   const basename = import.meta.env.BASE_URL;
-  console.log(basename);
+  // console.log(basename);
 
-  return <BrowserRouter basename={basename}>{children}</BrowserRouter>;
+  return <BrowserRouter basename="/blog-ia">{children}</BrowserRouter>;
 }
 
 function App() {
