@@ -23,7 +23,7 @@ const Sidebar = styled.aside`
       to bottom,
       rgba(229, 231, 235, 1),
       rgba(229, 231, 235, 0)
-    ); 
+    );
   }
 `;
 

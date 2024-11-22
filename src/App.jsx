@@ -1,10 +1,4 @@
-import {
-  Routes,
-  Route,
-  Link,
-  Navigate,
-  useNavigate,
-} from "react-router-dom";
+import { Routes, Route, Link, Navigate, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { loadMarkdownFiles } from "./utils/markdownLoader";
 import { ThemeProvider } from "styled-components";
@@ -17,26 +11,100 @@ import {
   StyledLink,
 } from "./components/StyledComponents";
 import ArticlePage from "./pages/ArticlePage";
+import BackToTopButton from "./components/BackToTopButton";
+import { theme } from "./themes";
 
-const theme = {
-  // Enhanced Readability Light Theme
-  background: "#FFFFFF", // Pure white
-  secondaryBackground: "#F9FAFB", // Ultra-soft gray
-  primaryText: "#1F2937", // Deep charcoal
-  secondaryText: "#4B5563", // Dark gray
-  link: "#E91E63", // Clear, vibrant blue
-  activeLink: "#E91E63",
-  button: "#FF4081",
-  buttonHover: "#C2185B",
-  border: "#E5E7EB", // Soft light gray
-  sidebarBackground: "#F3F4F6", // Light gray
-  accentError: "#DC2626", // Clear red
-  focus: "#10B981", // Soft green
-  code: "#E9ECEF", // Light gray for code blocks
-  codeText: "#2C3E50", // Dark text for code
-  gradientStart: "#FFFFFF",
-  gradientEnd: "#F9FAFB",
-};
+// function CategoryTree({ tree }) {
+//   return (
+//     <div>
+//       {Object.entries(tree).map(([category, data]) => (
+//         <div key={category}>
+//           <h3>{category}</h3>
+//           {data.articles && (
+//             <div>
+//               {data.articles.map((article) => (
+//                 <StyledLink
+//                   key={article.slug}
+//                   as={Link}
+//                   to={`/article/${article.slug}`}
+//                 >
+//                   {article.title}
+//                 </StyledLink>
+//               ))}
+//             </div>
+//           )}
+//           {data.subcategories && <CategoryTree tree={data.subcategories} />}
+//         </div>
+//       ))}
+//     </div>
+//   );
+// }
+
+// const getCategoriesByLevel = async () => {
+//   const loadedArticles = await loadMarkdownFiles();
+
+//   const categoriesByLevel = {};
+
+//   // Parcourir chaque article
+//   loadedArticles.forEach((article) => {
+//     const categories = article.frontmatter.category.split(" > "); // Séparer les catégories par '>'
+
+//     // Pour chaque niveau de catégorie
+//     categories.forEach((category, index) => {
+//       // Initialiser le niveau s'il n'existe pas
+//       if (!categoriesByLevel[index]) {
+//         categoriesByLevel[index] = {};
+//       }
+
+//       // Si la catégorie n'existe pas au niveau, on l'ajoute avec un tableau d'articles vide
+//       if (!categoriesByLevel[index][category]) {
+//         categoriesByLevel[index][category] = { articles: [] };
+//       }
+
+//       // Ajouter l'article uniquement à la dernière catégorie
+//       if (index === categories.length - 1) {
+//         categoriesByLevel[index][category].articles.push({
+//           slug: article.slug,
+//           frontmatter: article.frontmatter,
+//           content: article.content,
+//         });
+//       }
+//     });
+//   });
+
+//   // Résultat
+//   console.log(categoriesByLevel);
+//   return categoriesByLevel;
+// };
+
+// function buildCategoryTree(categoriesByLevel) {
+//   const categoryTree = {};
+
+//   Object.keys(categoriesByLevel).forEach((level) => {
+//     Object.entries(categoriesByLevel[level]).forEach(([category, data]) => {
+//       const parentLevel = level - 1;
+
+//       if (parentLevel >= 0) {
+//         // Trouver le parent au niveau précédent
+//         Object.entries(categoriesByLevel[parentLevel]).forEach(
+//           ([parentCategory]) => {
+//             if (!categoryTree[parentCategory]) {
+//               categoryTree[parentCategory] = {};
+//             }
+//             categoryTree[parentCategory][category] = {
+//               articles: data.articles,
+//             };
+//           }
+//         );
+//       } else {
+//         // Niveau racine
+//         categoryTree[category] = { articles: data.articles };
+//       }
+//     });
+//   });
+
+//   return categoryTree;
+// }
 
 function App() {
   const navigate = useNavigate();
@@ -138,6 +206,7 @@ function App() {
           />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
+        <BackToTopButton />
       </LayoutContainer>
     </ThemeProvider>
   );
