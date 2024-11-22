@@ -1,5 +1,5 @@
 ---
-category: Web
+category: Database
 title: Supabase avec React
 date: 2024-11-21
 author: Romagny13
@@ -36,8 +36,8 @@ const fetchData = async () => {
   const response = await fetch(`${supabaseUrl}/rest/v1/votre_table`, {
     headers: {
       apikey: supabaseAnonKey,
-      Authorization: `Bearer ${supabaseAnonKey}`
-    }
+      Authorization: `Bearer ${supabaseAnonKey}`,
+    },
   });
   const data = await response.json();
   return data;
@@ -53,9 +53,9 @@ const insertData = async (newItem) => {
     headers: {
       "Content-Type": "application/json",
       apikey: supabaseAnonKey,
-      Authorization: `Bearer ${supabaseAnonKey}`
+      Authorization: `Bearer ${supabaseAnonKey}`,
     },
-    body: JSON.stringify(newItem)
+    body: JSON.stringify(newItem),
   });
   return response.json();
 };
@@ -72,9 +72,9 @@ const updateData = async (id, updatedItem) => {
       headers: {
         "Content-Type": "application/json",
         apikey: supabaseAnonKey,
-        Authorization: `Bearer ${supabaseAnonKey}`
+        Authorization: `Bearer ${supabaseAnonKey}`,
       },
-      body: JSON.stringify(updatedItem)
+      body: JSON.stringify(updatedItem),
     }
   );
   return response.json();
@@ -91,8 +91,8 @@ const deleteData = async (id) => {
       method: "DELETE",
       headers: {
         apikey: supabaseAnonKey,
-        Authorization: `Bearer ${supabaseAnonKey}`
-      }
+        Authorization: `Bearer ${supabaseAnonKey}`,
+      },
     }
   );
   return response.status === 204;
@@ -245,9 +245,9 @@ const signUp = async (email: string, password: string) => {
         data: {
           first_name: "John",
           last_name: "Doe",
-          role: "user"
-        }
-      }
+          role: "user",
+        },
+      },
     });
 
     if (error) throw error;
@@ -268,7 +268,7 @@ const signIn = async (email: string, password: string) => {
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email,
-      password: password
+      password: password,
     });
 
     if (error) throw error;
@@ -289,8 +289,8 @@ const signInWithGoogle = async () => {
     provider: "google",
     options: {
       // Options supplémentaires
-      redirectTo: "http://localhost:3000/dashboard"
-    }
+      redirectTo: "http://localhost:3000/dashboard",
+    },
   });
 
   if (error) console.error("Erreur de connexion Google", error);
@@ -311,7 +311,7 @@ const SessionManager = () => {
     });
 
     const {
-      data: { subscription }
+      data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
     });
@@ -436,7 +436,7 @@ function Dashboard() {
 ```typescript
 const checkUserRole = async (requiredRole: string) => {
   const {
-    data: { user }
+    data: { user },
   } = await supabase.auth.getUser();
 
   const { data, error } = await supabase

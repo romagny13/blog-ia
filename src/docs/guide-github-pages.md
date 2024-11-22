@@ -266,7 +266,7 @@ Une fois votre projet configuré, déployez-le sur **GitHub Pages**. Si vous uti
 
 Avec cette configuration, votre application devrait fonctionner correctement sur **GitHub Pages**, même avec des routes dynamiques. 🎉
 
-### 7. Alternative avec redirection
+### 6. Alternative avec redirection
 
 #### 1. **Page HTML 404 avec redirection (GitHub Pages)**
 

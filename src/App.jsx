@@ -1,9 +1,7 @@
 import {
-  BrowserRouter,
   Routes,
   Route,
   Link,
-  useParams,
   Navigate,
   useNavigate,
 } from "react-router-dom";
@@ -80,15 +78,12 @@ function App() {
     // Récupère le paramètre `redirect` depuis l'URL
     const params = new URLSearchParams(window.location.search);
     const redirectPath = params.get("redirect");
-    sessionStorage.setItem("redirectPath", redirectPath);
-
     if (redirectPath) {
       // Décoder le chemin avant de naviguer
       const decodedPath = decodeURIComponent(
         redirectPath + window.location.hash
       );
       // Navigue vers le chemin demandé
-      sessionStorage.setItem("redirect", decodedPath);
       navigate(decodedPath, { replace: true });
     }
   }, [navigate]);
