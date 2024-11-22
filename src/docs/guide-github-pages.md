@@ -167,3 +167,101 @@ Pour mettre à jour votre site :
 
 - Le nom dans `base: '/nom-de-votre-repo/'` doit contenir uniquement le nom du repository (pas le nom d'utilisateur)
 - L'URL finale sera automatiquement construite comme : `username.github.io/repository-name`
+
+Voici un document **Markdown** qui résume les étapes pour résoudre les problèmes de routing avec **GitHub Pages** en utilisant **Vite** et **React Router**, en français :
+
+## 6. Résolution des problèmes de routing
+
+Lorsque vous déployez une application React sur **GitHub Pages**, il est fréquent de rencontrer des erreurs **404** pour des routes autres que la page d'accueil. Ce guide décrit comment configurer correctement votre projet pour éviter ces problèmes.
+
+### Problème
+
+GitHub Pages ne gère pas les routes dynamiques de votre application React (par exemple `/article/:slug`). Une tentative d'accès direct à une route personnalisée peut entraîner une erreur **404**.
+
+### Solution
+
+### 1. Ajouter un fichier `404.html`
+
+GitHub Pages redirige les erreurs **404** vers un fichier **`404.html`**. Pour que votre application gère correctement les routes, vous devez ajouter un fichier **`404.html`** dans le dossier **`public/`** de votre projet.
+
+Créez un fichier **`public/404.html`** avec le contenu suivant :
+
+```html
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>404 Non Trouvée</title>
+    <script type="text/javascript">
+      // Rediriger vers index.html pour permettre à React Router de gérer la route
+      window.location.replace("/nom-de-votre-repo/index.html");
+    </script>
+  </head>
+  <body>
+    <h1>Page non trouvée</h1>
+    <p>Redirection en cours...</p>
+  </body>
+</html>
+```
+
+### 2. Configurer `vite.config.js` pour GitHub Pages
+
+Si votre application est déployée dans un sous-dossier (par exemple `/nom-de-votre-repo/`), configurez le fichier **`vite.config.js`** pour définir le **`base`**. Cela permet de gérer correctement les chemins relatifs.
+
+Voici un exemple de configuration :
+
+```js
+// vite.config.js
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  base: '/nom-de-votre-repo/', // Remplacez par le nom de votre dépôt GitHub
+  plugins: [react()],
+});
+```
+
+### 3. Configurer React Router avec un `basename`
+
+Ajoutez le **`basename`** correspondant au sous-dossier dans votre configuration React Router. Par exemple, si votre application est dans `/nom-de-votre-repo/`, configurez React Router comme suit :
+
+```jsx
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+
+function App() {
+  return (
+    <Router basename="/nom-de-votre-repo">
+      <Routes>
+        {/* Gestion des 404 */}
+        <Route path="*" element={<NotFoundPage />} /> 
+      </Routes>
+    </Router>
+  );
+}
+
+export default App;
+```
+
+### 4. Déployer avec GitHub Pages
+
+Une fois votre projet configuré, déployez-le sur **GitHub Pages**. Si vous utilisez GitHub Actions, assurez-vous que votre workflow est correctement configuré.
+
+### 5. Vérifications après déploiement
+
+- Accédez à l'URL de votre application (par exemple `https://votre-utilisateur.github.io/nom-de-votre-repo/`).
+- Testez des routes dynamiques comme `/article/supabase-react`.
+- Vérifiez que les routes non valides redirigent vers votre page d'accueil ou affichent un message personnalisé.
+
+---
+
+## Résumé des configurations importantes
+
+| Fichier              | Configuration clé                                                                 |
+|----------------------|-----------------------------------------------------------------------------------|
+| `vite.config.js`     | `base: '/nom-du-repo/'`                                                          |
+| `public/404.html`    | Redirection vers `/nom-de-votre-repo/index.html`                                           |
+| `App.js`             | `basename="/nom-du-repo"` dans `BrowserRouter`                                   |
+| GitHub Actions       | Utilisation d'un workflow pour déployer automatiquement sur GitHub Pages         |
+
+Avec cette configuration, votre application devrait fonctionner correctement sur **GitHub Pages**, même avec des routes dynamiques. 🎉
