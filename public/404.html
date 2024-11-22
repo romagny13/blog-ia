@@ -1,16 +1,25 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>404 Not Found</title>
     <script type="text/javascript">
-      // Redirige vers index.html pour que React Router gère la navigation
-      window.location.replace("/blog-ia/index.html");
+      // Récupère le chemin demandé et le fragment
+      const currentPath = window.location.pathname;
+      const currentHash = window.location.hash;
+
+      // Construit l'URL redirigée avec les informations
+      const targetURL = `/blog-ia/index.html?redirect=${encodeURIComponent(
+        currentPath
+      )}${currentHash}`;
+
+      // Redirige vers index.html avec les informations ajoutées
+      window.location.replace(targetURL);
     </script>
   </head>
   <body>
-    <h1>Page not found</h1>
-    <p>Redirecting...</p>
+    <h1>Page non trouvée</h1>
+    <p>Redirection en cours...</p>
   </body>
 </html>

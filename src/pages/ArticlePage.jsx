@@ -87,6 +87,7 @@ function ArticlePage({ articles, onSlugChange }) {
   }, [slug, articles]);
 
   useEffect(() => {
+    // add copy button
     document.querySelectorAll("pre code").forEach((block) => {
       // hljs.highlightElement(block);
 
@@ -112,6 +113,16 @@ function ArticlePage({ articles, onSlugChange }) {
         preElement.appendChild(copyButton);
       }
     });
+
+    // navigate to hash
+    if (window.location.hash) {
+      const id = window.location.hash.substring(1);
+      const element = document.getElementById(id);
+      // console.log("scroll", id, element);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
+    }
   }, [htmlContent]);
 
   return (

@@ -5,6 +5,7 @@ import {
   Link,
   useParams,
   Navigate,
+  useNavigate,
 } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { loadMarkdownFiles } from "./utils/markdownLoader";
@@ -39,15 +40,10 @@ const theme = {
   gradientEnd: "#F9FAFB",
 };
 
-function Router({ children }) {
-  // Récupère le basename depuis vite.config.js
-  const basename = import.meta.env.BASE_URL;
-  // console.log(basename);
-
-  return <BrowserRouter basename="/blog-ia">{children}</BrowserRouter>;
-}
 
 function App() {
+  const navigate = useNavigate();
+
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeSlug, setActiveSlug] = useState(null);
@@ -82,6 +78,17 @@ function App() {
   };
 
   useEffect(() => {
+    // Récupère le paramètre `redirect` depuis l'URL
+    const params = new URLSearchParams(window.location.search);
+    const redirectPath = params.get("redirect");
+
+    if (redirectPath) {
+      // Navigue vers le chemin demandé
+      navigate(redirectPath + window.location.hash, { replace: true });
+    }
+  }, [navigate]);
+
+  useEffect(() => {
     fetchArticles();
   }, []);
 
@@ -93,7 +100,6 @@ function App() {
     <ThemeProvider theme={theme}>
       <GlobalStyle />
       <Header />
-      <Router>
         <LayoutContainer>
           <LeftNav>
             {categories.map((category) => (
@@ -133,7 +139,6 @@ function App() {
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </LayoutContainer>
-      </Router>
     </ThemeProvider>
   );
 }
