@@ -87,6 +87,7 @@ function App() {
         redirectPath + window.location.hash
       );
       // Navigue vers le chemin demandé
+      console.log(decodedPath);
       navigate(decodedPath, { replace: true });
     }
   }, [navigate]);
