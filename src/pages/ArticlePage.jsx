@@ -13,6 +13,8 @@ function ArticlePage({ articles, onSlugChange }) {
   const [toc, setToc] = useState([]);
 
   useEffect(() => {
+    onSlugChange(slug);
+
     const article = articles
       .flatMap((cat) => cat.articles)
       .find((a) => a.slug === slug);
@@ -82,12 +84,7 @@ function ArticlePage({ articles, onSlugChange }) {
     } else {
       navigate("/", { replace: true });
     }
-  }, [articles]);
-
-  useEffect(() => {
-    // console.log("slug changed", slug);
-    onSlugChange(slug);
-  }, [slug]);
+  }, [slug, articles]);
 
   useEffect(() => {
     document.querySelectorAll("pre code").forEach((block) => {
