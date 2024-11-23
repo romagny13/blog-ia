@@ -3,44 +3,36 @@ import styled from "styled-components";
 
 const SidebarContainer = styled.div`
   position: relative;
-  height: 100%;
   width: ${(props) => props.width}px;
   min-width: 200px;
-  max-width: 500px;
+  max-width: 400px;
+  overflow-y: auto;
 `;
-
-// const ResizeHandle = styled.div`
-//   position: absolute;
-//   top: 0;
-//   bottom: 0;
-//   left: 0;
-//   width: 50px;
-//   cursor: col-resize;
-//   background: transparent;
-// `;
 
 const ResizeHandle = styled.div`
   position: absolute;
-  left: 0;
+  right: 0;
   top: 0;
   bottom: 0;
   width: 10px;
   cursor: col-resize;
-  background: transparent;
+  background: ${(props) => (props.$isResizing ? "#e9ecef" : "transparent")};
   z-index: 10;
 `;
 
 const ResizableSidebar = ({ children, defaultWidth = 300 }) => {
   const [width, setWidth] = useState(defaultWidth);
   const [isResizing, setIsResizing] = useState(false);
-  const handleRef = useRef(null);
+  const startX = useRef(null);
 
   useEffect(() => {
     const handleMouseMove = (e) => {
-      if (isResizing) {
-        const newWidth = Math.max(200, Math.min(500, e.clientX));
-        setWidth(newWidth);
-      }
+      if (!isResizing) return;
+
+      const delta = e.clientX - startX.current;
+      const newWidth = Math.max(200, Math.min(500, width + delta));
+      setWidth(newWidth);
+      startX.current = e.clientX;
     };
 
     const handleMouseUp = () => {
@@ -56,11 +48,16 @@ const ResizableSidebar = ({ children, defaultWidth = 300 }) => {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isResizing]);
+  }, [isResizing, width]);
+
+  const startResize = (e) => {
+    setIsResizing(true);
+    startX.current = e.clientX;
+  };
 
   return (
     <SidebarContainer width={width}>
-      <ResizeHandle ref={handleRef} onMouseDown={() => setIsResizing(true)} />
+      <ResizeHandle $isResizing={isResizing} onMouseDown={startResize} />
       {children}
     </SidebarContainer>
   );

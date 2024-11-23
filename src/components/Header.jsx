@@ -15,31 +15,31 @@ const HeaderContainer = styled.header`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 15px 5%;
+  padding: 5px 4%; /* Réduit encore le padding pour compresser la hauteur */
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 
   @media (max-width: 768px) {
     flex-direction: column;
     text-align: center;
-    padding: 15px 10px;
+    padding: 5px 8%; /* Réduit encore le padding pour les petits écrans */
   }
 `;
 
 const LogoContainer = styled.div`
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 8px; /* Réduit l'espace entre le logo et le texte */
 `;
 
 const Title = styled.h1`
   font-family: "Orbitron", sans-serif;
-  font-size: 2rem;
+  font-size: 1.2rem; /* Réduit davantage la taille du titre */
   font-weight: 700;
   color: #ffffff;
-  letter-spacing: 2px;
+  letter-spacing: 0.5px; /* Réduit l'espacement des lettres */
   margin: 0;
   text-transform: uppercase;
-  text-shadow: 0 0 10px rgba(37, 117, 252, 0.5);
+  text-shadow: 0 0 8px rgba(37, 117, 252, 0.5); /* Légèrement réduit le flou de l'ombre */
   transition: transform 0.3s ease;
 
   &:hover {
@@ -48,19 +48,18 @@ const Title = styled.h1`
 `;
 
 const Subtitle = styled.p`
-  font-family: "Roboto", sans-serif;
-  font-size: 0.9rem;
+  font-size: 0.7rem; /* Réduit encore la taille de la police du sous-titre */
   font-weight: 300;
   color: rgba(255, 255, 255, 0.8);
   text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-top: 5px;
+  letter-spacing: 0.5px; /* Réduit l'espacement des lettres */
+  margin-top: 2px; /* Réduit l'espace au-dessus du sous-titre */
 `;
 
 const IconWrapper = styled.div`
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px; /* Réduit encore l'espace entre les icônes */
   color: white;
   opacity: 0.8;
   transition: opacity 0.3s ease;

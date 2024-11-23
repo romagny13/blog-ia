@@ -1,4 +1,5 @@
 import { Remarkable } from "remarkable";
+import { linkify } from "remarkable/linkify";
 import hljs from "highlight.js";
 import { asBlob } from "html-docx-js-typescript";
 import slugify from "slugify";
@@ -19,9 +20,14 @@ export function convertMarkdownToHtmlWithSyntaxHighlighting(markdownText) {
           console.error("Error highlighting code:", err);
         }
       }
-      return "";
+      return hljs.highlightAuto(str).value;
     },
-  });
+    html: true,
+    xhtmlOut: true,
+    breaks: true,
+    typographer: true,
+  }).use(linkify);
+
   return md.render(markdownText);
 }
 

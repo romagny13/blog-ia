@@ -1,64 +1,6 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap");
+
 html {
   scroll-behavior: smooth;
-}
-
-pre {
-  position: relative;
-  background: #f4f4f4;
-  border: 1px solid #e0e0e0;
-  padding: 1em;
-  border-radius: 8px;
-  overflow-x: auto;
-  line-height: 1.6;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-code {
-  font-family: "Fira Code", "Cascadia Code", monospace;
-  font-size: 0.9rem;
-  color: #2c3e50;
-}
-
-/* 
-.hljs {
-  display: block;
-  background: #f9fafb; // Ultra-soft gray
-  color: #2c3e50;
-}
-
-.hljs-keyword {
-  color: #3182ce; // Professional blue for keywords
-}
-
-.hljs-string {
-  color: #38a169; // Soft green for strings
-}
-
-.hljs-comment {
-  color: #718096; // Muted gray for comments
-}
-
-.hljs-function {
-  color: #2c5282; // Deep blue for function names
-}
-
-.hljs-number {
-  color: #1a202c; // Dark gray for numbers
-} */
-
-.copy-button {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  background-color: #e91e63;
-  color: white;
-  border: none;
-  padding: 5px 10px;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.copy-button:hover {
-  background-color: #c2185b;
 }

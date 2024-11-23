@@ -1,146 +1,97 @@
-import { Routes, Route, Link, Navigate, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { loadMarkdownFiles } from "./utils/markdownLoader";
-import { ThemeProvider } from "styled-components";
-import "highlight.js/styles/github.css";
-import Header from "./components/Header";
-import GlobalStyle from "./GlobalStyle";
+import React, { useState, useEffect } from "react";
 import {
-  LayoutContainer,
-  LeftNav,
-  StyledLink,
-} from "./components/StyledComponents";
-import ArticlePage from "./pages/ArticlePage";
+  Routes,
+  Route,
+  useParams,
+  Navigate,
+  useNavigate,
+} from "react-router-dom";
+import { loadMarkdownFiles } from "./utils/markdownLoader";
+import styled, { ThemeProvider } from "styled-components";
+import Header from "./components/Header";
+import Sidebar from "./components/Sidebar";
+import ResizableSidebar from "./components/ResizableSidebar";
+import ArticleView from "./components/ArticleView";
 import BackToTopButton from "./components/BackToTopButton";
+import GlobalStyle from "./GlobalStyle";
 import { theme } from "./themes";
+import CollapsibleTOC from "./components/CollapsibleTOC";
 
-// function CategoryTree({ tree }) {
-//   return (
-//     <div>
-//       {Object.entries(tree).map(([category, data]) => (
-//         <div key={category}>
-//           <h3>{category}</h3>
-//           {data.articles && (
-//             <div>
-//               {data.articles.map((article) => (
-//                 <StyledLink
-//                   key={article.slug}
-//                   as={Link}
-//                   to={`/article/${article.slug}`}
-//                 >
-//                   {article.title}
-//                 </StyledLink>
-//               ))}
-//             </div>
-//           )}
-//           {data.subcategories && <CategoryTree tree={data.subcategories} />}
-//         </div>
-//       ))}
-//     </div>
-//   );
-// }
+const AppContainer = styled.div`
+  display: flex;
+  height: 100vh; /* Assurez-vous que le conteneur principal prend toute la hauteur */
+  width: 100%; /* Ajoutez cette ligne pour vous assurer que la largeur totale est contrôlée */
+  overflow: hidden; /* Empêcher le débordement */
+`;
 
-// const getCategoriesByLevel = async () => {
-//   const loadedArticles = await loadMarkdownFiles();
+const MainContent = styled.div`
+  flex: 1; /* Prend toute la largeur restante */
+  overflow-y: auto; /* Permet le défilement du contenu principal */
+`;
 
-//   const categoriesByLevel = {};
+function buildCategoryTree(articles) {
+  const root = {};
 
-//   // Parcourir chaque article
-//   loadedArticles.forEach((article) => {
-//     const categories = article.frontmatter.category.split(" > "); // Séparer les catégories par '>'
+  articles.forEach((article) => {
+    const categories = article.frontmatter.category.split(" > ");
+    let current = root;
 
-//     // Pour chaque niveau de catégorie
-//     categories.forEach((category, index) => {
-//       // Initialiser le niveau s'il n'existe pas
-//       if (!categoriesByLevel[index]) {
-//         categoriesByLevel[index] = {};
-//       }
+    categories.forEach((category, index) => {
+      // Ajout de la catégorie si elle n'existe pas
+      if (!current[category]) {
+        current[category] = { articles: [], subCategories: {} };
+      }
 
-//       // Si la catégorie n'existe pas au niveau, on l'ajoute avec un tableau d'articles vide
-//       if (!categoriesByLevel[index][category]) {
-//         categoriesByLevel[index][category] = { articles: [] };
-//       }
+      // Ajout de l'article si c'est le dernier niveau
+      if (index === categories.length - 1) {
+        current[category].articles.push({
+          title: article.frontmatter.title,
+          slug: article.slug,
+        });
+      }
 
-//       // Ajouter l'article uniquement à la dernière catégorie
-//       if (index === categories.length - 1) {
-//         categoriesByLevel[index][category].articles.push({
-//           slug: article.slug,
-//           frontmatter: article.frontmatter,
-//           content: article.content,
-//         });
-//       }
-//     });
-//   });
+      // Move vers la sous-catégorie
+      current = current[category].subCategories;
+    });
+  });
+  // console.log("root", root);
+  return root;
+}
 
-//   // Résultat
-//   console.log(categoriesByLevel);
-//   return categoriesByLevel;
-// };
+const ArticleRoute = ({ articles, onTocCallback }) => {
+  const { slug } = useParams();
+  const article = articles.find((article) => article.slug === slug);
 
-// function buildCategoryTree(categoriesByLevel) {
-//   const categoryTree = {};
+  if (!article) return <Navigate to="/" replace />;
 
-//   Object.keys(categoriesByLevel).forEach((level) => {
-//     Object.entries(categoriesByLevel[level]).forEach(([category, data]) => {
-//       const parentLevel = level - 1;
+  return <ArticleView article={article} tocCallback={onTocCallback} />;
+};
 
-//       if (parentLevel >= 0) {
-//         // Trouver le parent au niveau précédent
-//         Object.entries(categoriesByLevel[parentLevel]).forEach(
-//           ([parentCategory]) => {
-//             if (!categoryTree[parentCategory]) {
-//               categoryTree[parentCategory] = {};
-//             }
-//             categoryTree[parentCategory][category] = {
-//               articles: data.articles,
-//             };
-//           }
-//         );
-//       } else {
-//         // Niveau racine
-//         categoryTree[category] = { articles: data.articles };
-//       }
-//     });
-//   });
-
-//   return categoryTree;
-// }
-
-function App() {
+const App = () => {
   const navigate = useNavigate();
 
-  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeSlug, setActiveSlug] = useState(null);
+  const [articles, setArticles] = useState([]);
+  const [categories, setCategories] = useState({});
 
-  const fetchArticles = async () => {
-    setLoading(true);
+  const [toc, setToc] = useState([]);
 
-    try {
-      const loadedArticles = await loadMarkdownFiles();
+  useEffect(() => {
+    const initializeData = async () => {
+      try {
+        const loadedArticles = await loadMarkdownFiles();
+        const categoryTree = buildCategoryTree(loadedArticles);
+        setCategories(categoryTree);
+        setArticles(loadedArticles);
+      } catch (error) {
+        console.error("Error loading articles:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      const categories = loadedArticles.reduce((acc, article) => {
-        const category = article.frontmatter.category || "Autres"; // Utiliser la catégorie du frontmatter
-        if (!acc[category]) {
-          acc[category] = [];
-        }
-        acc[category].push(article);
-        return acc;
-      }, {});
-
-      setCategories(
-        Object.entries(categories).map(([name, articles]) => ({
-          name,
-          articles,
-        }))
-      );
-      // console.log(loadedArticles);
-    } catch (error) {
-      console.error("Erreur de chargement des articles", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    initializeData();
+  }, []);
 
   useEffect(() => {
     // Récupère le paramètre `redirect` depuis l'URL
@@ -156,60 +107,48 @@ function App() {
     }
   }, [navigate]);
 
-  useEffect(() => {
-    fetchArticles();
-  }, []);
+  const handleTocCallback = (newToc) => setToc(newToc);
 
-  const handleSlugChange = (slug) => setActiveSlug(slug);
-
-  if (loading) return <div>Chargement des articles...</div>;
+  if (loading) return <div>Chargement...</div>;
 
   return (
     <ThemeProvider theme={theme}>
       <GlobalStyle />
       <Header />
-      <LayoutContainer>
-        <LeftNav>
-          {categories.map((category) => (
-            <div key={category.name}>
-              <h3>{category.name}</h3>
-              {category.articles.map((article) => (
-                <StyledLink
-                  key={article.slug}
-                  as={Link}
-                  to={`/article/${article.slug}`}
-                  className={activeSlug == article.slug ? "active" : ""}
-                >
-                  {article.frontmatter.title}
-                </StyledLink>
-              ))}
-            </div>
-          ))}
-        </LeftNav>
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <p style={{ margin: "10px" }}>
-                Sélectionnez un article pour voir son contenu.
-              </p>
-            }
-          />
-          <Route
-            path="/article/:slug"
-            element={
-              <ArticlePage
-                articles={categories}
-                onSlugChange={handleSlugChange}
-              />
-            }
-          />
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-        <BackToTopButton />
-      </LayoutContainer>
+      <AppContainer>
+        <ResizableSidebar defaultWidth={300}>
+          <Sidebar tree={categories} />
+        </ResizableSidebar>
+
+        <MainContent id="main">
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <div style={{ padding: "2rem" }}>
+                  Sélectionnez un article pour commencer
+                </div>
+              }
+            />
+            <Route
+              path="/article/:slug"
+              element={
+                <ArticleRoute
+                  articles={articles}
+                  onTocCallback={handleTocCallback}
+                />
+              }
+            />
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </MainContent>
+
+        {toc.length > 0 && <CollapsibleTOC toc={toc} />}
+
+        <BackToTopButton targetId="main" />
+      </AppContainer>
     </ThemeProvider>
   );
-}
+};
 
 export default App;
