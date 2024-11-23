@@ -55,7 +55,7 @@ const ArticleLink = styled(Link)`
 // `;
 
 const ArticleItem = styled(CategoryItem)`
-  padding-left: ${(props) => props.$depth * 1 + 1}rem;
+  padding-left: ${(props) => props.$depth * 0.8 + 1}rem;
 
   &.active {
     font-weight: bold;

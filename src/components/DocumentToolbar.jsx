@@ -4,7 +4,6 @@ import styled from "styled-components";
 import {
   convertHtmlToDocx,
   convertMarkdownToHtml,
-  convertMarkdownToHtmlWithSyntaxHighlighting,
   downloadFile,
 } from "../utils/convertUtils";
 
@@ -76,9 +75,7 @@ const DocumentToolbar = ({ article }) => {
       setLoading(true); // Démarrer le chargement
       try {
         // Convertir le Markdown en HTML
-        const htmlContent = convertMarkdownToHtmlWithSyntaxHighlighting(
-          article.content
-        );
+        const htmlContent = convertMarkdownToHtml(article.content);
         setConvertedHtml(htmlContent);
 
         // Convertir le HTML en Word de manière asynchrone

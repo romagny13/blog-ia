@@ -1,17 +1,14 @@
 import { Remarkable } from "remarkable";
 import { linkify } from "remarkable/linkify";
 import hljs from "highlight.js";
+import "highlight.js/styles/github-dark.css";
+// to docx
 import { asBlob } from "html-docx-js-typescript";
+// to generate anchor id 
 import slugify from "slugify";
 
-// Markdown to HTML avec ou sans syntax highlighting
-export function convertMarkdownToHtml(markdownText) {
-  const md = new Remarkable();
-  return md.render(markdownText);
-}
-
-export function convertMarkdownToHtmlWithSyntaxHighlighting(markdownText) {
-  const md = new Remarkable({
+const createMarkdownConverter = () => {
+  return new Remarkable({
     highlight: (str, lang) => {
       if (lang && hljs.getLanguage(lang)) {
         try {
@@ -27,7 +24,16 @@ export function convertMarkdownToHtmlWithSyntaxHighlighting(markdownText) {
     breaks: true,
     typographer: true,
   }).use(linkify);
+};
 
+
+// export function convertMarkdownToHtml(markdownText) {
+//   const md = new Remarkable();
+//   return md.render(markdownText);
+// }
+
+export function convertMarkdownToHtmlWithSyntaxHighlighting(markdownText) {
+  const md = createMarkdownConverter();
   return md.render(markdownText);
 }
 
@@ -77,59 +83,145 @@ export function generateTOCFromHtml(htmlContent) {
   };
 }
 
-function convertCodeToTable(htmlContent) {
-  // Utiliser une expression régulière pour trouver les balises <pre><code></code></pre>
-  const regex =
-    /<pre(?: style="([^"]*)")?\s*><code(?: class="([^"]*)")?\s*>([\s\S]*?)<\/code>/g;
+const defaultOptions = {
+  title: "Document Markdown Converti",
+  language: "fr",
+  standalone: true,
+  includeDefaultStyles: true,
+  darkMode: true,
+};
 
-  // Remplacer le contenu des balises <pre><code></code></pre> par une table HTML
-  return htmlContent.replace(
-    regex,
-    (match, preStyle, codeClass, codeContent) => {
-      const lines = codeContent.split("\n");
+const defaultStyles = `
+     body {
+         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+         line-height: 1.6;
+         max-width: 800px;
+         margin: 0 auto;
+         padding: 2rem;
+         color: #24292e;
+         background-color: #ffffff;
+     }
+     h1, h2, h3, h4, h5, h6 {
+         color: #1b1f23;
+         margin-top: 1.5em;
+         margin-bottom: 0.5em;
+         font-weight: 600;
+     }
+     h1 { font-size: 2.5em; border-bottom: 2px solid #eaecef; padding-bottom: 0.3em; }
+     h2 { font-size: 2em; border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; }
+     h3 { font-size: 1.5em; }
+     h4 { font-size: 1.25em; }
+     a {
+         color: #0366d6;
+         text-decoration: none;
+         transition: color 0.2s ease-in-out;
+     }
+     a:hover {
+         color: #0056b3;
+         text-decoration: underline;
+     }
 
-      // Créer un tableau Word avec une colonne
-      const tableRows = lines
-        .map(
-          (line) =>
-            `<tr>
-          <td>
-            ${line}
-          </td>
-        </tr>`
-        )
-        .join("");
-
-      return `
-        <table style="width:100%; border-collapse:collapse;">
-         <tr><td> ${tableRows}</td></tr>
-        </table>
-      `;
+    code {
+      background-color: #2d2d2d;
+      color: #e6e6e6;
+      padding: 0.2rem 0.4rem;
+      border-radius: 3px;
+      font-family: "Fira Code", Consolas, Monaco, "Andale Mono", monospace;
+      font-size: 0.9em;
     }
-  );
-}
 
-export function convertHtmlToDocx(htmlContent) {
-  // Convertir les blocs <pre><code> en tableaux
-  // const processedHtml = convertCodeToTable(htmlContent);
+    pre {
+      background-color: #2d2d2d !important;
+      padding: 1.2rem !important;
+      border-radius: 8px !important;
+      overflow-x: auto !important;
+      margin: 0 !important;
+      border: 1px solid #404040 !important;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    }
 
-  const fullHtml = `
-    <html>
-      <head>
-        <meta charset="UTF-8">
-        <title>Document</title>
-      </head>
-      <body>${htmlContent}</body>
-    </html>
-  `;
+    pre code {
+      background-color: transparent !important;
+      padding: 0 !important;
+      border-radius: 0 !important;
+      font-size: 0.95em !important;
+      line-height: 1.7 !important;
+      font-family: "Fira Code", Consolas, Monaco, "Andale Mono", monospace !important;
+      color: #e6e6e6 !important;
+      text-shadow: none !important;
+    }
 
+    pre + p {
+      margin-top: 1.5rem;
+    }
+
+    .hljs-comment {
+      color: #9ca3af !important;
+    }
+
+    .hljs-keyword {
+      color: #93c5fd !important;
+    }
+
+    .hljs-string {
+      color: #86efac !important;
+    }
+
+    .hljs-number {
+      color: #fca5a5 !important;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+
+      pre {
+        padding: 1rem !important;
+        font-size: 0.9em !important;
+      }
+    }
+`;
+
+export const convertMarkdownToHtml = (markdown, options = {}) => {
+  const finalOptions = { ...defaultOptions, ...options };
+  const md = createMarkdownConverter();
+  const htmlContent = md.render(markdown);
+
+  if (!finalOptions.standalone) {
+    return htmlContent;
+  }
+
+  return `
+<!DOCTYPE html>
+<html lang="${finalOptions.language}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${finalOptions.title}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css">
+    ${
+      finalOptions.includeDefaultStyles ? `<style>${defaultStyles}</style>` : ""
+    }
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fira-code@6.2.0/distr/fira_code.css">
+</head>
+<body>
+    ${htmlContent}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+</html>`;
+};
+
+export function convertHtmlToDocx(fullHtml) {
   return asBlob(fullHtml, {
     orientation: "portrait",
     margins: { top: "20mm", bottom: "20mm", left: "20mm", right: "20mm" },
   });
 }
 
-// Télécharger le fichier
 export function downloadFile(blob, fileName) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
