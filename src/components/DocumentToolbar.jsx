@@ -5,6 +5,7 @@ import {
   convertHtmlToDocx,
   convertMarkdownToHtml,
   downloadFile,
+  convertMardownToPdf,
 } from "../utils/convertUtils";
 
 const Toolbar = styled.div`
@@ -116,6 +117,10 @@ const DocumentToolbar = ({ article }) => {
     }
   };
 
+  const handleDownloadPdf = async () => {
+    await convertMardownToPdf(article.content, `${article.slug}.pdf`);
+  };
+
   return (
     <Toolbar>
       <ToolbarButton
@@ -143,6 +148,15 @@ const DocumentToolbar = ({ article }) => {
       >
         <FileSpreadsheet size={20} />
         <ButtonText>Word</ButtonText>
+      </ToolbarButton>
+
+      <ToolbarButton
+        onClick={async () => await handleDownloadPdf()}
+        disabled={loading}
+        title="Exporter en PDF"
+      >
+        <FileText size={20} />
+        <ButtonText>PDF</ButtonText>
       </ToolbarButton>
     </Toolbar>
   );
