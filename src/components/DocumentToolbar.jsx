@@ -150,14 +150,14 @@ const DocumentToolbar = ({ article }) => {
         <ButtonText>Word</ButtonText>
       </ToolbarButton>
 
-      <ToolbarButton
+      {/* <ToolbarButton
         onClick={async () => await handleDownloadPdf()}
         disabled={loading}
         title="Exporter en PDF"
       >
         <FileText size={20} />
         <ButtonText>PDF</ButtonText>
-      </ToolbarButton>
+      </ToolbarButton> */}
     </Toolbar>
   );
 };
