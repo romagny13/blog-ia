@@ -1,5 +1,8 @@
 export async function loadMarkdownFiles() {
-  const modules = import.meta.glob("../docs/*.md", { as: "raw" });
+  const modules = import.meta.glob("../docs/**/*.md", { as: "raw" });
+
+  console.log(modules);
+
   const articles = await Promise.all(
     Object.entries(modules).map(async ([path, loader]) => {
       const content = await loader();
@@ -18,10 +21,17 @@ export async function loadMarkdownFiles() {
         .replace(/^---\s*\n[\s\S]*?\n\s*---/, "")
         .trim();
 
+      // Création du slug à partir du chemin
+      const slug = path
+        .split("/") // Diviser le chemin en segments
+        .pop() // Prendre le dernier segment (nom du fichier)
+        .replace(".md", "") // Retirer l'extension .md
+        .toLowerCase(); // Convertir en minuscules
+
       return {
-        slug: path.replace("../docs/", "").replace(".md", ""),
-        frontmatter,
-        content: markdownContent,
+        slug, // Slug formé à partir du chemin
+        frontmatter, // Frontmatter extrait
+        content: markdownContent, // Contenu markdown
       };
     })
   );
