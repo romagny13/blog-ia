@@ -38,6 +38,18 @@ export function convertMarkdownToHtmlWithSyntaxHighlighting(markdownText) {
   return md.render(markdownText);
 }
 
+function removeHtmlTagsWithValidation(str) {
+  // Supprime les balises HTML non autorisées
+  const sanitizedStr = str.replace(
+    /<(?!b|i|strong|a|p|ul|ol|li|em)[^>]+>/g,
+    ""
+  );
+
+  // Ensuite, on peut utiliser DOMParser pour extraire le texte sans balises
+  const doc = new DOMParser().parseFromString(sanitizedStr, "text/html");
+  return doc.body.textContent || "";
+}
+
 // Générer la Table des matières depuis le HTML
 export function generateTOCFromHtml(htmlContent) {
   const toc = [];
@@ -54,7 +66,7 @@ export function generateTOCFromHtml(htmlContent) {
 
       const tocItem = {
         id: uniqueId,
-        title,
+        title: removeHtmlTagsWithValidation(title),
         level: parseInt(level),
         children: [],
       };
