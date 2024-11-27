@@ -263,6 +263,14 @@ const convertMarkdownToHtmlForPdf = (markdown, options = {}) => {
           text-decoration: underline;
       }
 
+      h1 code, h2 code, h3 code, h4 code, h5 code, h6 code {
+        font-family: monospace; /* Police de caractère monospace pour le code */
+        font-size: 0.9em; /* Réduire légèrement la taille du texte du code */
+        white-space: nowrap; /* Empêcher le retour à la ligne dans le code */
+        word-wrap: break-word; /* Permettre le passage à la ligne si nécessaire */
+      }
+
+
       /* Empêche les coupures dans les blocs de code */
       code, pre {
           page-break-inside: avoid; /* Empêche la coupure à l'intérieur des éléments de code */
@@ -345,17 +353,21 @@ export async function convertMardownToPdf(markdownText, fileName) {
   const htmlContent = convertMarkdownToHtmlForPdf(markdownText);
   try {
     const options = {
-      margin: 20, // Marges (en mm)
+      margin: [25, 30], // Marges personnalisées (en mm)
       filename: fileName,
       image: {
         type: "jpeg",
-        quality: 0.98,
+        quality: 0.98, // Qualité de l'image pour alléger le fichier
       },
       html2canvas: {
-        scale: 1, // Ajuster la qualité de l'image pour alléger le fichier PDF
-        useCORS: true,
-        letterRendering: true,
-        scrollY: 0, // Utiliser un décalage vertical si nécessaire
+        scale: 2, // Augmenter la qualité de l'image pour un rendu plus net
+        useCORS: true, // Autoriser le CORS pour les images
+        letterRendering: true, // Meilleur rendu du texte
+        scrollY: 10, // Décalage vertical pour corriger les coupures
+        // ignoreElements: function (element) {
+        //   // Ignore certains éléments si nécessaire (par exemple, des éléments spécifiques qui causent des problèmes)
+        //   return element.tagName === "CODE";
+        // },
       },
       jsPDF: {
         unit: "mm",
@@ -363,7 +375,7 @@ export async function convertMardownToPdf(markdownText, fileName) {
         orientation: "portrait", // Orientation portrait
       },
       pagebreak: {
-        mode: ["avoid-all", "css"], // Utiliser avoid-all pour éviter les coupures
+        mode: ["avoid-all", "css"], // Toujours éviter les coupures, sauf quand nécessaire
         before: ".page-break-before", // Saut de page avant certains éléments
         after: ".page-break-after", // Saut de page après certains éléments
         avoid: ".page-break-avoid", // Empêcher les coupures au niveau des éléments marqués

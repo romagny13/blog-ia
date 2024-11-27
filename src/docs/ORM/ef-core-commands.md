@@ -1,6 +1,6 @@
 ---
-category: EF Core
-title: Commandes
+category: ORM
+title: EF Core Commandes
 date: 2024-11-27
 author: Romagny13
 ---
