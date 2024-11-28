@@ -175,7 +175,7 @@ Cela affichera la version de l'outil `dotnet-ef` installé.
 dotnet tool uninstall --global dotnet-ef
 ```
 
-Cela désinstallera la version de `dotnet-ef` actuellement installée globalement. Vous pouvez ensuite installer la version souhaitée avec :
+Cela désinstallera la version de `dotnet-ef` actuellement installée globalement. 
 
 #### 1.6.1.3 Directement dans le fichier .csproj
 
