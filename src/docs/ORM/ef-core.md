@@ -148,7 +148,34 @@ Si vous travaillez avec **VS Code**, ou si vous préférez utiliser la ligne de 
 dotnet tool install --global dotnet-ef
 ```
 
-Cela vous permet d'utiliser les commandes **dotnet ef** dans n'importe quel projet .NET.
+Voici les étapes pour vérifier si l'outil `dotnet-ef` est installé, vérifier la version installée et désinstaller une ancienne version :
+
+2. **Vérifier si l'outil est installé**
+   Pour vérifier si l'outil `dotnet-ef` est installé, vous pouvez exécuter la commande suivante :
+
+```bash
+dotnet tool list --global
+```
+
+Cela affichera une liste des outils .NET installés globalement, et vous pourrez vérifier si `dotnet-ef` est présent.
+
+3. **Vérifier la version installée**
+   Si l'outil est installé, vous pouvez vérifier sa version en exécutant :
+
+```bash
+dotnet ef --version
+```
+
+Cela affichera la version de l'outil `dotnet-ef` installé.
+
+4. **Désinstaller une ancienne version**
+   Si vous avez une version obsolète ou souhaitez la désinstaller, vous pouvez le faire avec la commande suivante :
+
+```bash
+dotnet tool uninstall --global dotnet-ef
+```
+
+Cela désinstallera la version de `dotnet-ef` actuellement installée globalement. Vous pouvez ensuite installer la version souhaitée avec :
 
 #### 1.6.1.3 Directement dans le fichier .csproj
 
@@ -167,48 +194,6 @@ Si vous voulez que votre projet utilise **Microsoft.EntityFrameworkCore.Tools** 
   </ItemGroup>
 </Project>
 ```
-
-### 1.6.2 Utilisation de `dotnet ef`
-
-Une fois **Microsoft.EntityFrameworkCore.Tools** installé, vous pouvez utiliser les commandes **dotnet ef** pour gérer les migrations et la base de données.
-
-#### 1.6.2.1 Créer une migration
-
-Pour créer une migration, utilisez la commande suivante dans la CLI ou le terminal :
-
-```bash
-dotnet ef migrations add NomDeLaMigration
-```
-
-Cela génère une nouvelle migration dans votre dossier **Migrations**.
-
-#### 1.6.2.2 Appliquer les migrations
-
-Pour appliquer les migrations à la base de données, utilisez la commande :
-
-```bash
-dotnet ef database update
-```
-
-Cette commande mettra à jour votre base de données avec toutes les migrations en attente.
-
-#### 1.6.2.3 Vérifier les migrations
-
-Pour afficher la liste des migrations appliquées ou disponibles, vous pouvez utiliser :
-
-```bash
-dotnet ef migrations list
-```
-
-#### 1.6.2.4 Supprimer une migration
-
-Si vous souhaitez annuler une migration, utilisez la commande suivante pour la supprimer :
-
-```bash
-dotnet ef migrations remove
-```
-
-Cela supprimera la dernière migration sans affecter la base de données.
 
 ### 1.6.3 Remarques
 
