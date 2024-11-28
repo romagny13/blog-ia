@@ -447,7 +447,166 @@ public class UserRepository
 }
 ```
 
-## 10. Bonnes pratiques
+## 10. Type Handlers
+
+Les **Type Handlers** dans Dapper sont utilisés pour gérer les types personnalisés qui ne sont pas pris en charge directement par Dapper lors du mappage des résultats des requêtes SQL vers des objets C#. Ils permettent de contrôler la manière dont Dapper lit et écrit des données dans la base de données, offrant ainsi une plus grande flexibilité pour travailler avec des types complexes, des types non standards ou des types personnalisés qui nécessitent un traitement spécial.
+
+### **Pourquoi utiliser des Type Handlers ?**
+
+Dapper, par défaut, utilise des mappers pour associer les colonnes de la base de données aux propriétés des objets C# en fonction des noms de colonnes et de propriétés. Cependant, il existe des cas où Dapper ne sait pas comment traiter un certain type de donnée ou si vous avez besoin d'une conversion personnalisée (par exemple, convertir une chaîne de caractères en un type `Enum` ou gérer des types `DateTime` dans un format spécifique).
+
+Les **Type Handlers** permettent de résoudre ce problème en fournissant une logique personnalisée de lecture et d'écriture des données dans et depuis la base de données.
+
+### **Création d’un Type Handler**
+
+Un **Type Handler** est une classe qui implémente l’interface `SqlMapper.ITypeHandler`. Vous devez définir deux méthodes principales :
+
+1. **SetValue** : Cette méthode est utilisée pour définir la valeur d'un paramètre de la requête SQL (c'est-à-dire pour convertir un type C# en un type compréhensible par la base de données).
+2. **Parse** : Cette méthode est utilisée pour lire une valeur depuis la base de données et la convertir en un type C#.
+
+### **Exemple d’un Type Handler personnalisé**
+
+Supposons que vous ayez une base de données qui stocke des valeurs `DateTime` sous forme de chaînes de caractères dans un format spécifique (`yyyy-MM-dd HH:mm:ss`), mais vous souhaitez que Dapper gère cela comme un `DateTime` en C#.
+
+Voici un exemple de type handler pour ce cas :
+
+```csharp
+public class CustomDateTimeHandler : SqlMapper.TypeHandler<DateTime>
+{
+    public override void SetValue(IDbDataParameter parameter, DateTime value)
+    {
+        // Convertir DateTime en chaîne dans le format souhaité avant d'insérer dans la base
+        parameter.Value = value.ToString("yyyy-MM-dd HH:mm:ss");
+    }
+
+    public override DateTime Parse(object value)
+    {
+        // Convertir la chaîne de la base de données en DateTime
+        return DateTime.ParseExact((string)value, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+    }
+}
+```
+
+Dans cet exemple, nous avons créé un `CustomDateTimeHandler` qui gère la conversion des objets `DateTime` entre la base de données et le modèle C#. Le paramètre est converti en chaîne lors de l'insertion et converti en `DateTime` lors de la lecture.
+
+### **Enregistrement d'un Type Handler**
+
+Une fois le type handler créé, vous devez l'enregistrer auprès de Dapper. Cela permet à Dapper de savoir quel type handler utiliser pour les types personnalisés lors de l'exécution des requêtes.
+
+Voici comment enregistrer un type handler :
+
+```csharp
+SqlMapper.AddTypeHandler(new CustomDateTimeHandler());
+```
+
+Cela signifie que Dapper utilisera maintenant le `CustomDateTimeHandler` chaque fois qu’il rencontrera un `DateTime` dans la base de données.
+
+### **Utilisation d’un Type Handler dans une requête**
+
+Une fois le type handler enregistré, vous pouvez l'utiliser lors de l'exécution d'une requête SQL. Dapper appliquera automatiquement la logique du handler lors de la lecture ou de l’écriture des données.
+
+**Exemple** :
+
+```csharp
+var users = connection.Query<User>("SELECT * FROM Users");
+```
+
+Si la colonne `DateOfBirth` dans la base de données est de type `VARCHAR` mais que vous souhaitez la traiter comme un `DateTime`, Dapper utilisera le `CustomDateTimeHandler` pour gérer la conversion.
+
+### **Exemple avec Enum**
+
+Un autre exemple courant est l’utilisation des `Enum`. Dapper ne sait pas comment manipuler automatiquement les `Enum` lorsqu'ils sont stockés sous forme de `int` dans la base de données. Un type handler peut être utilisé pour gérer cela.
+
+Supposons que vous ayez un `Enum` pour représenter le statut d'un utilisateur (`Active`, `Inactive`, `Suspended`), et que ce statut soit stocké sous forme d'entier dans la base de données :
+
+```csharp
+public enum UserStatus
+{
+    Active = 1,
+    Inactive = 2,
+    Suspended = 3
+}
+```
+
+Vous pouvez créer un type handler pour gérer cette conversion :
+
+```csharp
+public class EnumTypeHandler : SqlMapper.TypeHandler<UserStatus>
+{
+    public override void SetValue(IDbDataParameter parameter, UserStatus value)
+    {
+        parameter.Value = (int)value;  // Convertir l'enum en entier
+    }
+
+    public override UserStatus Parse(object value)
+    {
+        return (UserStatus)Enum.ToObject(typeof(UserStatus), value);  // Convertir l'entier en enum
+    }
+}
+```
+
+Une fois le type handler créé, vous l'enregistrez de la même manière :
+
+```csharp
+SqlMapper.AddTypeHandler(new EnumTypeHandler());
+```
+
+### **Utilisation avec des types personnalisés (classes complexes)**
+
+Les Type Handlers peuvent également être utilisés pour des types personnalisés. Par exemple, si vous avez une classe `Money` qui contient une valeur et une devise, vous pouvez créer un type handler pour manipuler ce type dans Dapper.
+
+Voici un exemple d'un type `Money` :
+
+```csharp
+public class Money
+{
+    public decimal Amount { get; set; }
+    public string Currency { get; set; }
+}
+```
+
+Et un type handler pour `Money` :
+
+```csharp
+public class MoneyHandler : SqlMapper.TypeHandler<Money>
+{
+    public override void SetValue(IDbDataParameter parameter, Money value)
+    {
+        parameter.Value = $"{value.Amount} {value.Currency}";
+    }
+
+    public override Money Parse(object value)
+    {
+        var str = (string)value;
+        var parts = str.Split(' ');
+        return new Money
+        {
+            Amount = decimal.Parse(parts[0]),
+            Currency = parts[1]
+        };
+    }
+}
+```
+
+L'enregistrement du type handler se fait comme d'habitude :
+
+```csharp
+SqlMapper.AddTypeHandler(new MoneyHandler());
+```
+
+### **Gestion de Type Handlers avec des procédures stockées**
+
+Lors de l’utilisation de procédures stockées, vous pouvez appliquer des type handlers pour les paramètres d’entrée et de sortie, ce qui est utile lorsqu’une procédure stockée retourne des types personnalisés ou des objets complexes. Par exemple, si une procédure retourne une colonne de type `Money`, le type handler sera utilisé pour convertir les résultats avant de les mapper.
+
+```csharp
+var result = connection.Query<Money>("EXEC GetTotalAmount @UserId", new { UserId = 123 }).FirstOrDefault();
+```
+
+### **Conclusion**
+
+Les **Type Handlers** dans Dapper offrent une grande flexibilité pour gérer des types de données complexes ou non standard entre C# et la base de données. Ils sont particulièrement utiles lorsque vous travaillez avec des types comme des `Enum`, des classes personnalisées, des dates dans des formats spécifiques ou des types non gérés directement par Dapper. Leur utilisation permet de garder votre code propre, maintenable et extensible sans avoir à écrire manuellement des conversions répétitives.
+
+## 11. Bonnes pratiques
 
 Voici quelques recommandations et bonnes pratiques collectées auprès des développeurs utilisant Dapper, qui peuvent vous aider à tirer le meilleur parti de cette bibliothèque tout en optimisant vos performances et la lisibilité de votre code :
 
