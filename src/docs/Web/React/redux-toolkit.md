@@ -70,19 +70,25 @@ src/
 ├── App.js                 # Composant principal
 ```
 
+## **3. Exemple avec la Structure Simple**
+
+Nous allons construire une application React avec Redux Toolkit en utilisant la **structure simple** comme exemple.
+
+---
+
 ### **Étape 1 : Configurer le Store**
 
-Le store est le conteneur central de l'état de l'application. Créez un fichier `store.js` :
+Créez un fichier `store.js` pour centraliser la configuration du store :
 
-#### **store.js**
+#### `store.js`
 
 ```javascript
 import { configureStore } from "@reduxjs/toolkit";
-import counterReducer from "../features/counter/counterSlice";
+import counterReducer from "./slices/counterSlice";
 
 export const store = configureStore({
   reducer: {
-    counter: counterReducer, // Ajoutez ici d'autres slices si nécessaire
+    counter: counterReducer, // Associe le slice "counter" au store
   },
 });
 ```
@@ -91,9 +97,9 @@ export const store = configureStore({
 
 ### **Étape 2 : Créer un Slice**
 
-Un _slice_ regroupe le reducer, les actions, et l'état initial dans un seul fichier.
+Un _slice_ regroupe l’état initial, les reducers et les actions d’une fonctionnalité dans un seul fichier.
 
-#### **counterSlice.js**
+#### `slices/counterSlice.js`
 
 ```javascript
 import { createSlice } from "@reduxjs/toolkit";
@@ -118,26 +124,24 @@ const counterSlice = createSlice({
   },
 });
 
-// Exportez les actions
 export const { increment, decrement, incrementByAmount } = counterSlice.actions;
 
-// Exportez le reducer
 export default counterSlice.reducer;
 ```
 
 ---
 
-### **Étape 3 : Fournir le Store à l'application**
+### **Étape 3 : Intégrer Redux dans l'Application**
 
-Utilisez le composant `<Provider>` de **react-redux** pour rendre le store disponible dans l'ensemble de l'application.
+Utilisez le composant `Provider` de `react-redux` pour rendre le store accessible à l’ensemble de l’application.
 
-#### **App.js**
+#### `App.js`
 
 ```javascript
 import React from "react";
 import { Provider } from "react-redux";
-import { store } from "./app/store";
-import Counter from "./components/Counter";
+import { store } from "./store";
+import Counter from "./Counter";
 
 function App() {
   return (
@@ -155,20 +159,16 @@ export default App;
 
 ---
 
-### **Étape 4 : Connecter un composant Redux**
+### **Étape 4 : Créer un Composant Connecté**
 
-Utilisez les hooks `useSelector` pour lire l'état et `useDispatch` pour envoyer des actions.
+Connectez un composant à Redux en utilisant les hooks `useSelector` pour accéder à l’état et `useDispatch` pour envoyer des actions.
 
-#### **Counter.js**
+#### `Counter.js`
 
 ```javascript
 import React from "react";
 import { useSelector, useDispatch } from "react-redux";
-import {
-  increment,
-  decrement,
-  incrementByAmount,
-} from "../features/counter/counterSlice";
+import { increment, decrement, incrementByAmount } from "./slices/counterSlice";
 
 function Counter() {
   const count = useSelector((state) => state.counter.value);
@@ -188,8 +188,6 @@ function Counter() {
 
 export default Counter;
 ```
-
----
 
 ## **4. Fonctionnalités avancées**
 
