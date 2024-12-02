@@ -785,3 +785,104 @@ Les types **`MONEY`** et **`SMALLMONEY`** sont utilisés pour stocker des valeur
 | `TIMESTAMP`              | Gère les versions des lignes pour la concurrence.                  | Suivi des changements avec un champ `TIMESTAMP`.                   |
 
 Ces types particuliers de données permettent à SQL Server d’offrir une plus grande flexibilité pour gérer des données complexes, comme des documents JSON ou XML, des informations géographiques ou géométriques, ou des données binaires, en fonction des besoins de votre application.
+
+#### **4. Le type `ROWVERSION` dans SQL Server**
+
+Le type **`ROWVERSION`** (anciennement appelé **`TIMESTAMP`**) est un type de données particulier dans SQL Server qui est utilisé principalement pour la gestion de la concurrence optimiste. Il est un mécanisme utile pour suivre les modifications dans une table sans avoir besoin d'utiliser des verrous, en permettant de détecter si une ligne a été modifiée depuis qu'elle a été lue.
+
+Le champ **`ROWVERSION`** est un type de données binaire qui génère un numéro unique et croissant à chaque modification d'une ligne. Chaque fois qu'une ligne est insérée ou mise à jour, SQL Server génère un nouveau **`ROWVERSION`** pour cette ligne.
+
+#### **Principaux points à propos de `ROWVERSION`** :
+
+- **Type de données binaire** : Le type `ROWVERSION` est stocké sous forme de **`BINARY(8)`** (8 octets).
+- **Valeur auto-générée** : SQL Server gère automatiquement la génération des valeurs de `ROWVERSION` lorsque des modifications sont apportées à une ligne. Vous n'avez pas besoin de l'assigner manuellement.
+- **Unicité** : La valeur de `ROWVERSION` est unique dans le cadre d'une instance SQL Server, ce qui permet de détecter de manière fiable les modifications apportées aux lignes.
+- **Concurrence optimiste** : `ROWVERSION` est souvent utilisé dans un contexte de gestion de la concurrence optimiste, où les applications vérifient si une ligne a été modifiée avant de la mettre à jour.
+
+---
+
+#### **Exemple d'utilisation de `ROWVERSION`**
+
+##### **1. Création d'une table avec `ROWVERSION`**
+
+Lors de la création d'une table, vous pouvez ajouter une colonne de type `ROWVERSION`. Cette colonne générera automatiquement un identifiant unique chaque fois qu'une ligne est insérée ou mise à jour.
+
+```sql
+CREATE TABLE Products (
+    ProductID INT PRIMARY KEY,
+    ProductName NVARCHAR(100),
+    Price DECIMAL(10, 2),
+    LastUpdated ROWVERSION
+);
+```
+
+Dans cet exemple, la colonne `LastUpdated` est de type `ROWVERSION`. À chaque fois qu'une ligne dans cette table est modifiée, SQL Server met automatiquement à jour la valeur de `LastUpdated`.
+
+##### **2. Insertion d'une ligne dans la table**
+
+Lorsque vous insérez une ligne dans la table, vous ne devez pas spécifier la valeur de la colonne `ROWVERSION`. SQL Server s'en charge pour vous.
+
+```sql
+INSERT INTO Products (ProductID, ProductName, Price)
+VALUES (1, 'Widget', 19.99);
+```
+
+##### **3. Mise à jour d'une ligne avec un contrôle de version**
+
+Supposons que vous ayez une application qui souhaite mettre à jour un produit, mais vous souhaitez vous assurer que la ligne n'a pas été modifiée par quelqu'un d'autre entre-temps. Vous pouvez utiliser le champ `ROWVERSION` pour effectuer cette vérification.
+
+1. **Lisez la valeur de `ROWVERSION`** avant de mettre à jour la ligne :
+
+   ```sql
+   SELECT ProductID, ProductName, Price, LastUpdated
+   FROM Products
+   WHERE ProductID = 1;
+   ```
+
+   Imaginons que la valeur retournée de `LastUpdated` soit `0x00000000000007D2`.
+
+2. **Mettez à jour la ligne en vérifiant que la valeur de `ROWVERSION` correspond à celle lue** :
+
+   ```sql
+   UPDATE Products
+   SET Price = 17.99
+   WHERE ProductID = 1 AND LastUpdated = 0x00000000000007D2;
+   ```
+
+   Si la valeur de `LastUpdated` a changé entre-temps, c'est-à-dire si la ligne a été modifiée par un autre utilisateur ou un autre processus, l'update échouera (aucune ligne ne sera affectée).
+
+##### **4. Utilisation de `ROWVERSION` pour la gestion de la concurrence**
+
+Le mécanisme de concurrence optimiste est un concept où une application vérifie si une ligne a été modifiée avant de l'actualiser, pour éviter d'écraser les modifications d'un autre utilisateur. Par exemple, lorsque plusieurs utilisateurs tentent de mettre à jour une ligne en même temps, chaque utilisateur pourrait récupérer la valeur de `ROWVERSION` au moment où ils accèdent à la ligne. Lorsqu'ils essaient de sauvegarder leurs modifications, ils vérifient si la valeur de `ROWVERSION` a changé. Si elle a changé, cela signifie que quelqu'un d'autre a modifié la ligne, et l'utilisateur peut alors décider de recharger les données ou de gérer le conflit autrement.
+
+---
+
+##### **Différences entre `ROWVERSION` et `TIMESTAMP`**
+
+Bien que le type **`ROWVERSION`** ait été appelé **`TIMESTAMP`** dans les versions antérieures de SQL Server, ils ne représentent pas des **horodatages** dans le sens traditionnel (c'est-à-dire la date et l'heure). Le nom **`TIMESTAMP`** était historiquement utilisé pour ce type, mais cela a été source de confusion, car les utilisateurs s'attendaient à ce que le champ représente un **horodatage** réel.
+
+Dans SQL Server, le type `ROWVERSION` ne stocke pas une date et une heure précises, mais plutôt une valeur binaire unique et croissante qui indique l'ordre des modifications dans une table.
+
+---
+
+#### **Quelques points importants à retenir sur `ROWVERSION`** :
+
+1. **Génération automatique** : SQL Server génère et met à jour automatiquement la valeur `ROWVERSION` à chaque insertion ou mise à jour.
+2. **Uniqueness** : Les valeurs `ROWVERSION` sont uniques dans l'ensemble d'une instance SQL Server, ce qui permet d'identifier de manière fiable si une ligne a changé.
+3. **Concurrence optimiste** : Utilisé principalement dans les systèmes où plusieurs utilisateurs peuvent accéder et modifier simultanément les mêmes données, `ROWVERSION` permet de gérer efficacement les conflits sans utiliser de verrous.
+4. **Non interprétable** : Le champ `ROWVERSION` est un nombre binaire qui ne représente pas une date et ne peut pas être utilisé comme un horodatage.
+
+---
+
+#### **Résumé des caractéristiques du type `ROWVERSION`** :
+
+| **Caractéristique**        | **Détail**                                                                        |
+| -------------------------- | --------------------------------------------------------------------------------- |
+| **Type de données**        | `BINARY(8)`                                                                       |
+| **Valeur auto-générée**    | Oui, mise à jour automatiquement                                                  |
+| **Utilisation principale** | Gestion de la concurrence optimiste                                               |
+| **Comportement**           | Chaque insertion ou mise à jour génère une nouvelle valeur unique                 |
+| **Nom**                    | `ROWVERSION` (anciennement `TIMESTAMP`)                                           |
+| **Comparaison**            | Utilisé pour détecter les modifications concurrentes, mais pas un horodatage réel |
+
+Le type `ROWVERSION` est une excellente option pour gérer les mises à jour simultanées de manière efficace, en minimisant les conflits grâce à une méthode de gestion de la concurrence optimiste.
