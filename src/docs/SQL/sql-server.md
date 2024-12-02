@@ -250,6 +250,7 @@ Voici des solutions détaillées pour insérer des données en désactivant une 
 ### **1. Insérer des données en désactivant l'IDENTITY**
 
 #### **1.1. Désactiver l'IDENTITY temporairement**
+
 Les colonnes marquées comme `IDENTITY` (auto-incrément) empêchent l'insertion manuelle des valeurs par défaut. Pour forcer une insertion manuelle, utilisez `SET IDENTITY_INSERT`.
 
 ```sql
@@ -265,6 +266,7 @@ SET IDENTITY_INSERT myTable OFF;
 ```
 
 #### **1.2. Contraintes**
+
 - `SET IDENTITY_INSERT` ne peut être activé que pour une seule table à la fois dans une session.
 - Nécessite des permissions suffisantes (comme `db_owner`).
 
@@ -275,6 +277,7 @@ SET IDENTITY_INSERT myTable OFF;
 SQL Server propose des vues système pour récupérer des informations sur les métadonnées.
 
 #### **2.1. Lister toutes les tables**
+
 ```sql
 SELECT TABLE_NAME, TABLE_SCHEMA, TABLE_TYPE
 FROM INFORMATION_SCHEMA.TABLES
@@ -282,12 +285,14 @@ WHERE TABLE_TYPE = 'BASE TABLE';
 ```
 
 #### **2.2. Lister toutes les vues**
+
 ```sql
 SELECT TABLE_NAME, TABLE_SCHEMA
 FROM INFORMATION_SCHEMA.VIEWS;
 ```
 
 #### **2.3. Lister toutes les procédures stockées**
+
 ```sql
 SELECT ROUTINE_NAME, ROUTINE_SCHEMA, ROUTINE_TYPE
 FROM INFORMATION_SCHEMA.ROUTINES
@@ -295,6 +300,7 @@ WHERE ROUTINE_TYPE = 'PROCEDURE';
 ```
 
 #### **2.4. Obtenir les colonnes d'une table**
+
 ```sql
 SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, IS_NULLABLE
 FROM INFORMATION_SCHEMA.COLUMNS
@@ -302,9 +308,10 @@ WHERE TABLE_NAME = 'myTable';
 ```
 
 #### **2.5. Lister les clés primaires**
+
 ```sql
-SELECT 
-    tc.TABLE_NAME, 
+SELECT
+    tc.TABLE_NAME,
     kcu.COLUMN_NAME
 FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS tc
 JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS kcu
@@ -313,11 +320,12 @@ WHERE tc.CONSTRAINT_TYPE = 'PRIMARY KEY';
 ```
 
 #### **2.6. Lister les clés étrangères**
+
 ```sql
-SELECT 
-    fk.TABLE_NAME AS ForeignTable, 
+SELECT
+    fk.TABLE_NAME AS ForeignTable,
     fk.COLUMN_NAME AS ForeignColumn,
-    pk.TABLE_NAME AS PrimaryTable, 
+    pk.TABLE_NAME AS PrimaryTable,
     pk.COLUMN_NAME AS PrimaryColumn
 FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS AS rc
 JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS fk
@@ -327,9 +335,11 @@ JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS pk
 ```
 
 #### **2.7. Obtenir les relations entre tables**
+
 Pour avoir un aperçu complet des relations (clés étrangères et primaires) dans une base de données :
+
 ```sql
-SELECT 
+SELECT
     OBJECT_NAME(fk.parent_object_id) AS ForeignTable,
     c1.name AS ForeignKeyColumn,
     OBJECT_NAME(fk.referenced_object_id) AS PrimaryTable,
@@ -346,19 +356,22 @@ JOIN sys.columns AS c2
 ### **3. Infos complémentaires**
 
 #### **3.1. Lister toutes les bases de données**
+
 ```sql
 SELECT name AS DatabaseName, state_desc AS Status
 FROM sys.databases;
 ```
 
 #### **3.2. Taille d'une base de données**
+
 ```sql
 EXEC sp_spaceused;
 ```
 
 #### **3.3. Lister les index sur une table**
+
 ```sql
-SELECT 
+SELECT
     i.name AS IndexName,
     i.type_desc AS IndexType,
     c.name AS ColumnName
@@ -377,13 +390,398 @@ WHERE OBJECT_NAME(i.object_id) = 'myTable';
 1. **Lister les tables, vues et procédures** :  
    Ouvrez SSMS, faites un clic droit sur la base de données > **Tâches** > **Générer des scripts**.
 
-2. **Exporter des structures ou des données** :  
+2. **Exporter des structures ou des données** :
+
    - Cochez **Structure uniquement** ou **Données uniquement** selon vos besoins.
    - Personnalisez les options pour inclure les relations et contraintes.
 
 3. **Requêtes d'exploration rapide** :  
    Utilisez le volet **Object Explorer** de SSMS pour explorer visuellement les objets (tables, vues, etc.) avec un clic droit > **Script as** > **SELECT/INSERT/DELETE/CREATE**.
 
+### **5. Gestion des tables temporaires dans SQL Server**
+
+Les **tables temporaires** dans SQL Server sont utilisées pour stocker des données temporairement durant la session de l'utilisateur ou jusqu'à ce que la session soit fermée. Elles sont particulièrement utiles pour les opérations complexes ou les calculs intermédiaires. SQL Server propose deux types de tables temporaires : les **tables temporaires locales** et les **tables temporaires globales**.
+
 ---
 
-Si tu souhaites des explications ou des exemples plus détaillés pour un cas particulier (par ex., profiling des performances ou gestion des index), fais-moi signe !
+#### **1. Types de Tables Temporaires**
+
+##### **1.1. Tables Temporaires Locales**
+
+Les tables temporaires locales sont créées avec un seul `#` devant leur nom. Elles sont visibles uniquement pour la session ou la connexion dans laquelle elles ont été créées. Dès que la connexion est fermée ou que la session se termine, la table temporaire est automatiquement supprimée.
+
+###### **Exemple de création de table temporaire locale**
+
+```sql
+CREATE TABLE #TempTable (
+    ID INT,
+    Name VARCHAR(100)
+);
+```
+
+- **Insérer des données dans une table temporaire locale :**
+
+```sql
+INSERT INTO #TempTable (ID, Name) VALUES (1, 'John Doe');
+```
+
+- **Sélectionner des données depuis la table temporaire :**
+
+```sql
+SELECT * FROM #TempTable;
+```
+
+- **Supprimer une table temporaire locale explicitement (bien que non nécessaire à la fin de la session) :**
+
+```sql
+DROP TABLE #TempTable;
+```
+
+---
+
+##### **1.2. Tables Temporaires Globales**
+
+Les tables temporaires globales sont créées avec deux `##` devant leur nom. Contrairement aux tables locales, elles sont visibles pour toutes les sessions SQL Server jusqu'à ce que la dernière session qui y accède soit fermée.
+
+###### **Exemple de création de table temporaire globale**
+
+```sql
+CREATE TABLE ##GlobalTempTable (
+    ID INT,
+    Name VARCHAR(100)
+);
+```
+
+- **Insérer des données dans une table temporaire globale :**
+
+```sql
+INSERT INTO ##GlobalTempTable (ID, Name) VALUES (2, 'Jane Doe');
+```
+
+- **Sélectionner des données depuis la table temporaire globale :**
+
+```sql
+SELECT * FROM ##GlobalTempTable;
+```
+
+- **Supprimer une table temporaire globale explicitement :**
+
+```sql
+DROP TABLE ##GlobalTempTable;
+```
+
+---
+
+#### **2. Caractéristiques des Tables Temporaires**
+
+- **Scope de visibilité** :
+  - Les tables temporaires locales sont visibles uniquement pour la session où elles ont été créées.
+  - Les tables temporaires globales sont visibles pour toutes les sessions jusqu'à ce que la dernière session soit fermée.
+- **Durée de vie** :
+
+  - Les tables temporaires locales et globales sont automatiquement supprimées lorsque la session ou la connexion est fermée, ou après avoir été explicitement supprimées par l'utilisateur.
+
+- **Performance** :
+
+  - Les tables temporaires sont souvent utilisées dans des processus de traitement des données temporaires ou complexes. Elles sont généralement stockées dans la base de données `tempdb`, qui est un espace dédié aux objets temporaires dans SQL Server.
+
+- **Indexed** :
+
+  - Il est possible d’ajouter des index sur les tables temporaires pour optimiser les performances, surtout dans le cas de grands volumes de données.
+
+  ```sql
+  CREATE CLUSTERED INDEX IX_TempTable ON #TempTable (ID);
+  ```
+
+---
+
+#### **3. Utilisation courante des Tables Temporaires**
+
+Les tables temporaires sont souvent utilisées dans les scénarios suivants :
+
+- **Traitement des données intermédiaires** : Lorsque des données doivent être manipulées ou agrégées avant d'être insérées dans une table permanente.
+- **Opérations complexes** : Pour stocker des résultats d'une requête complexe qui sont ensuite utilisés dans des opérations supplémentaires.
+- **Partitionnement de données** : Pour diviser un grand ensemble de données en morceaux plus petits pour un traitement plus efficace.
+- **Calculs temporaires** : Pour des calculs qui ne nécessitent pas de stockage permanent.
+
+##### **Exemple : Utilisation d'une table temporaire dans une procédure stockée**
+
+```sql
+CREATE PROCEDURE ProcessData
+AS
+BEGIN
+    -- Création de la table temporaire
+    CREATE TABLE #TempResults (
+        ID INT,
+        CalculationResult DECIMAL
+    );
+
+    -- Insérer des données dans la table temporaire
+    INSERT INTO #TempResults (ID, CalculationResult)
+    SELECT ID, SUM(Value) FROM SalesData GROUP BY ID;
+
+    -- Utiliser les données de la table temporaire
+    SELECT * FROM #TempResults;
+
+    -- Supprimer la table temporaire
+    DROP TABLE #TempResults;
+END;
+```
+
+---
+
+#### **4. Bonnes Pratiques avec les Tables Temporaires**
+
+- **Utilisation avec précaution des tables temporaires globales** : Comme elles sont accessibles par toutes les sessions, elles peuvent entraîner des conflits de noms ou des problèmes de concurrence. Préférez les tables temporaires locales dans la majorité des cas.
+- **Gestion des index** : Bien qu'il soit possible d'ajouter des index aux tables temporaires pour améliorer les performances, assurez-vous que cela est nécessaire, car cela peut introduire un overhead dans les opérations d'insertion.
+
+- **Suppression explicite** : Bien que les tables temporaires locales soient supprimées à la fermeture de la session, il est recommandé de les supprimer explicitement lorsque vous n'en avez plus besoin, pour libérer des ressources dans `tempdb`.
+
+---
+
+#### **5. Vérifier l'existence des Tables Temporaires**
+
+Si vous devez vérifier l'existence d'une table temporaire avant de l'utiliser (par exemple dans une procédure stockée), vous pouvez utiliser une requête sur les vues système de SQL Server.
+
+```sql
+IF OBJECT_ID('tempdb..#TempTable') IS NOT NULL
+    PRINT 'Table temporaire existe';
+ELSE
+    PRINT 'Table temporaire n\'existe pas';
+```
+
+---
+
+#### **6. Table Temporaire vs Table Permanente**
+
+Voici un tableau récapitulatif des différences entre les tables permanentes et les tables temporaires :
+
+| **Critère**         | **Table Temporaire**                          | **Table Permanente**                 |
+| ------------------- | --------------------------------------------- | ------------------------------------ |
+| **Durée de vie**    | Durée de vie limitée à la session/connexion   | Durée de vie indéfinie               |
+| **Visibilité**      | Locales ou globales selon le type             | Visible à toutes les sessions        |
+| **Stockage**        | Dans `tempdb`                                 | Dans la base de données principale   |
+| **Indexation**      | Possible (indexage plus léger)                | Indexage complet possible            |
+| **Usage principal** | Traitement temporaire, données intermédiaires | Données permanentes et de production |
+
+---
+
+Les tables temporaires sont un outil puissant pour la gestion des données temporaires dans SQL Server, en particulier pour les processus complexes ou les calculs qui nécessitent de manipuler les données avant qu'elles ne soient définitivement insérées dans des tables permanentes.
+
+### **5. Types de données particuliers dans SQL Server**
+
+SQL Server propose une série de types de données spécialisés qui peuvent être utilisés pour stocker et manipuler des informations dans des formats spécifiques. Ces types incluent le **JSON**, le **XML**, les **types géographiques** (comme les points, les lignes et les polygones), ainsi que des types dédiés à des usages particuliers. Voici un aperçu de ces types de données et de leur utilisation dans SQL Server.
+
+---
+
+#### **1. Type JSON**
+
+SQL Server prend en charge le **JSON** (JavaScript Object Notation), bien que le type `JSON` n'existe pas directement en tant que type de données dans SQL Server. Le JSON est simplement stocké dans des **colonnes de type `NVARCHAR`** ou `VARCHAR`. Cependant, SQL Server offre une série de fonctions intégrées pour travailler avec les données JSON, comme la lecture, l'écriture et l'extraction de données.
+
+##### **Exemples d'utilisation du JSON en SQL Server**
+
+- **Création d'une colonne JSON dans une table** :
+
+  ```sql
+  CREATE TABLE Users (
+      UserID INT PRIMARY KEY,
+      UserData NVARCHAR(MAX)
+  );
+  ```
+
+- **Insertion de données JSON** :
+
+  ```sql
+  INSERT INTO Users (UserID, UserData)
+  VALUES (1, '{"name": "John Doe", "age": 30, "email": "john.doe@example.com"}');
+  ```
+
+- **Lecture des données JSON** :
+  Vous pouvez extraire des valeurs spécifiques du JSON en utilisant la fonction `JSON_VALUE`.
+
+  ```sql
+  SELECT JSON_VALUE(UserData, '$.name') AS Name
+  FROM Users
+  WHERE UserID = 1;
+  ```
+
+- **Filtrer les données JSON avec `OPENJSON`** :
+
+  ```sql
+  SELECT *
+  FROM OPENJSON((SELECT UserData FROM Users WHERE UserID = 1))
+  WITH (
+      name NVARCHAR(100),
+      age INT,
+      email NVARCHAR(100)
+  );
+  ```
+
+- **Modifier un document JSON** :
+  Utilisez la fonction `JSON_MODIFY` pour changer une valeur dans le JSON.
+  ```sql
+  UPDATE Users
+  SET UserData = JSON_MODIFY(UserData, '$.age', 31)
+  WHERE UserID = 1;
+  ```
+
+---
+
+#### **2. Type XML**
+
+SQL Server offre un type de données spécifique pour stocker des documents XML : le type **`XML`**. Ce type est très puissant pour la gestion et le traitement des données XML, permettant l'utilisation de méthodes spécifiques pour interroger et manipuler le contenu XML.
+
+##### **Exemples d'utilisation du XML en SQL Server**
+
+- **Création d'une colonne XML dans une table** :
+
+  ```sql
+  CREATE TABLE Orders (
+      OrderID INT PRIMARY KEY,
+      OrderDetails XML
+  );
+  ```
+
+- **Insertion de données XML** :
+
+  ```sql
+  INSERT INTO Orders (OrderID, OrderDetails)
+  VALUES (1, '<order><item>Book</item><quantity>2</quantity><price>15.00</price></order>');
+  ```
+
+- **Interrogation des données XML** :
+  SQL Server fournit des méthodes pour interroger des documents XML en utilisant le langage XQuery.
+
+  - Extraire une valeur d'un élément XML :
+
+    ```sql
+    SELECT OrderDetails.value('(/order/item/text())[1]', 'VARCHAR(100)') AS Item
+    FROM Orders
+    WHERE OrderID = 1;
+    ```
+
+  - Extraire plusieurs valeurs à l'aide de `nodes` et `OPENXML` :
+    ```sql
+    SELECT Item.value('text()', 'VARCHAR(100)') AS Item
+    FROM Orders
+    CROSS APPLY OrderDetails.nodes('/order/item') AS Items(Item);
+    ```
+
+- **Modifier un document XML** :
+  ```sql
+  UPDATE Orders
+  SET OrderDetails.modify('replace value of (/order/quantity/text())[1] with "3"')
+  WHERE OrderID = 1;
+  ```
+
+---
+
+#### **3. Types Géographiques**
+
+SQL Server prend en charge des types de données spécifiques pour le stockage et la manipulation des données géospatiales, notamment les types **`GEOMETRY`** et **`GEOGRAPHY`**. Ces types sont utilisés pour stocker des informations géographiques et géométriques, telles que des points, des lignes et des polygones.
+
+### **Types de données géographiques**
+
+- **`GEOMETRY`** : Utilisé pour représenter des données géométriques dans un espace plat (2D), comme des lignes, des polygones et des points.
+- **`GEOGRAPHY`** : Utilisé pour représenter des données géographiques dans un espace sphérique (basé sur la courbure de la Terre), comme des points, des lignes et des polygones sur la surface terrestre.
+
+##### **Exemples d'utilisation des types géographiques**
+
+- **Création d'une colonne de type géographique** :
+
+  ```sql
+  CREATE TABLE Locations (
+      LocationID INT PRIMARY KEY,
+      Location GEOGRAPHY
+  );
+  ```
+
+- **Insertion de données géographiques** :
+
+  ```sql
+  INSERT INTO Locations (LocationID, Location)
+  VALUES (1, GEOGRAPHY::STPointFromText('POINT(-122.360 47.656)', 4326));
+  ```
+
+- **Interrogation des données géographiques** :
+  Vous pouvez utiliser les méthodes intégrées de SQL Server pour interroger des données géographiques.
+
+  - Calculer la distance entre deux points géographiques :
+
+    ```sql
+    SELECT Location.STDistance(GEOGRAPHY::STPointFromText('POINT(-122.350 47.650)', 4326)) AS Distance
+    FROM Locations
+    WHERE LocationID = 1;
+    ```
+
+  - Vérifier si un point se trouve à l'intérieur d'un polygone géographique :
+    ```sql
+    DECLARE @polygon GEOGRAPHY = GEOGRAPHY::STGeomFromText('POLYGON((-122.362 47.656, -122.359 47.656, -122.359 47.654, -122.362 47.654, -122.362 47.656))', 4326);
+    SELECT Location.STWithin(@polygon) AS IsInside
+    FROM Locations
+    WHERE LocationID = 1;
+    ```
+
+---
+
+#### **4. Types de données supplémentaires**
+
+##### **4.1. Type `VARBINARY`**
+
+Le type **`VARBINARY`** est utilisé pour stocker des données binaires. Il peut contenir des fichiers ou d'autres types de données binaires. Ce type est souvent utilisé pour le stockage de documents, images ou fichiers binaires.
+
+- **Exemple d'insertion de données binaires** :
+
+  ```sql
+  CREATE TABLE Documents (
+      DocumentID INT PRIMARY KEY,
+      DocumentData VARBINARY(MAX)
+  );
+
+  INSERT INTO Documents (DocumentID, DocumentData)
+  VALUES (1, 0x54686973206973206120626C6F622066696C65);  -- Hexadecimal data
+  ```
+
+##### **4.2. Type `TIMESTAMP`**
+
+Le type **`TIMESTAMP`** dans SQL Server est utilisé pour stocker un nombre unique qui est mis à jour chaque fois qu'une ligne est modifiée. Il est souvent utilisé pour la gestion de la concurrence.
+
+- **Exemple de création d'une table avec un `TIMESTAMP`** :
+  ```sql
+  CREATE TABLE AuditLogs (
+      LogID INT PRIMARY KEY,
+      Action VARCHAR(100),
+      Timestamp TIMESTAMP
+  );
+  ```
+
+##### **4.3. Type `MONEY` et `SMALLMONEY`**
+
+Les types **`MONEY`** et **`SMALLMONEY`** sont utilisés pour stocker des valeurs monétaires. `MONEY` a une précision plus grande que `SMALLMONEY`.
+
+- **Exemple d'insertion avec le type `MONEY`** :
+
+  ```sql
+  CREATE TABLE Transactions (
+      TransactionID INT PRIMARY KEY,
+      Amount MONEY
+  );
+
+  INSERT INTO Transactions (TransactionID, Amount)
+  VALUES (1, 100.50);
+  ```
+
+---
+
+#### **Résumé des types particuliers dans SQL Server**
+
+| **Type de Données**      | **Description**                                                    | **Exemple d'utilisation**                                          |
+| ------------------------ | ------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| `JSON`                   | Stockage de données au format JSON.                                | `NVARCHAR(MAX)` avec fonctions `JSON_VALUE`, `OPENJSON`, etc.      |
+| `XML`                    | Stockage et manipulation de documents XML.                         | `XML` avec méthodes XQuery, `value()`, `modify()`, etc.            |
+| `GEOMETRY` / `GEOGRAPHY` | Stockage et manipulation de données géographiques et géométriques. | `GEOGRAPHY::STPointFromText()`, `STDistance()`, `STWithin()`, etc. |
+| `VARBINARY`              | Stockage de données binaires.                                      | `VARBINARY(MAX)` pour documents ou fichiers binaires.              |
+| `MONEY` / `SMALLMONEY`   | Stockage de valeurs monétaires.                                    | `MONEY` pour les montants d'argent.                                |
+| `TIMESTAMP`              | Gère les versions des lignes pour la concurrence.                  | Suivi des changements avec un champ `TIMESTAMP`.                   |
+
+Ces types particuliers de données permettent à SQL Server d’offrir une plus grande flexibilité pour gérer des données complexes, comme des documents JSON ou XML, des informations géographiques ou géométriques, ou des données binaires, en fonction des besoins de votre application.
