@@ -1,8 +1,6 @@
 export async function loadMarkdownFiles() {
   const modules = import.meta.glob("../docs/**/*.md", { as: "raw" });
 
-  console.log(modules);
-
   const articles = await Promise.all(
     Object.entries(modules).map(async ([path, loader]) => {
       const content = await loader();
