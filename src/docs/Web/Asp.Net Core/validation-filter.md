@@ -3,6 +3,7 @@ category: Web > Asp.Net Core
 title: Validation Filter
 date: 2024-11-27
 author: Romagny13
+protected: true
 ---
 
 # Guide de Validation Personnalisée dans ASP.NET Core API
