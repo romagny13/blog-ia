@@ -75,7 +75,7 @@ public class UsersController : ControllerBase
 }
 ```
 
-Appliquer le filtre au niveau du controller
+### Appliquer le filtre au niveau du controller
 
 ```csharp
 [TypeFilter(typeof(ValidationFilter))]
@@ -85,7 +85,7 @@ public class UsersController : ControllerBase
 }
 ```
 
-Alternative: créer un attribut
+### Alternative: créer un attribut
 
 ```csharp
 // Attribut pour marquer les méthodes/contrôleurs nécessitant une validation
