@@ -8,59 +8,100 @@ protected: true
 
 # Guide de Validation avec `IEndpointFilter` dans les **Minimal APIs** ASP.NET Core (.NET 7+)
 
-ASP.NET Core 7 introduit la possibilité d'utiliser des **Endpoint Filters** dans les **Minimal APIs** pour gérer des fonctionnalités telles que la validation des données avant l'exécution du code du point de terminaison. Dans ce guide, nous allons explorer deux approches pour la validation des modèles dans un **Minimal API** : l'utilisation de `Validator.TryValidateObject` (validation classique) et l'utilisation de **FluentValidation** (une bibliothèque populaire pour la validation de données).
+Dans **ASP.NET Core 7 et versions ultérieures**, les **Minimal APIs** permettent de créer des API REST avec une configuration simplifiée. Une fonctionnalité utile que vous pouvez intégrer dans vos points de terminaison est la **validation des modèles**. Dans ce guide, nous allons explorer deux façons de valider des objets dans les Minimal APIs : en utilisant `Validator.TryValidateObject` dans un **endpoint filter générique** et avec **FluentValidation**.
 
 ### Prérequis
 
-Ce guide nécessite d'utiliser **.NET 7** ou supérieur, car les **Endpoint Filters** sont une fonctionnalité introduite dans cette version.
+- .NET 7 ou version supérieure
+- Un projet Minimal API ASP.NET Core
+- Les classes de modèle avec des annotations de validation (par exemple, `Required`, `StringLength`, etc.)
 
-### 1. Validation avec `Validator.TryValidateObject`
+## 1. Validation avec `Validator.TryValidateObject` dans un filtre générique
 
-Cette méthode permet de valider un objet à l'aide des annotations de validation comme `[Required]`, `[Range]`, etc. Nous allons créer un **Endpoint Filter** pour effectuer cette validation dans un point de terminaison d'une **Minimal API**.
+Nous allons commencer par créer un **endpoint filter** générique qui valide n'importe quel modèle à l'aide de `Validator.TryValidateObject`. Ce filtre permet de valider des objets de type générique dans les points de terminaison de l'API, ce qui rend le code réutilisable et réduit la duplication.
 
-#### Création du Filtre de Validation
+### Étapes pour créer un **ValidationEndpointFilter<T>** générique :
 
-Voici comment implémenter un filtre de validation qui utilise `Validator.TryValidateObject` pour valider un modèle :
+#### 1.1. Création du filtre de validation
+
+Nous allons créer un filtre de validation générique qui pourra être utilisé avec n'importe quel modèle, sans avoir à dupliquer la logique de validation pour chaque type spécifique.
+
+Voici le code de la classe `ValidationEndpointFilter<T>` :
 
 ```csharp
 using System.ComponentModel.DataAnnotations;
-using Data.Entities;
 
 namespace APINet7.EndpointFilters
 {
-    public class ValidationEndpointFilter : IEndpointFilter
+    public class ValidationEndpointFilter<T> : IEndpointFilter
     {
         public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext efiContext, EndpointFilterDelegate next)
         {
-            // Récupère le modèle passé dans la requête (ici, le modèle "Owner")
-            var owner = efiContext.GetArgument<Owner>(0);
+            // Récupère l'argument du type T (ici, le modèle générique)
+            var model = efiContext.GetArgument<T>(0);
 
             // Liste pour contenir les résultats de validation
             var results = new List<ValidationResult>();
 
             // Valide l'objet à l'aide de Validator.TryValidateObject
-            var isValid = Validator.TryValidateObject(owner, new ValidationContext(owner), results, true);
+            var isValid = Validator.TryValidateObject(model, new ValidationContext(model), results, true);
 
             // Si l'objet n'est pas valide, retourne une erreur de validation
             if (!isValid)
-                return Results.ValidationProblem(DataValidationHelper.ToDictionary(results));
+                return Results.ValidationProblem(ToDictionary(results));
 
             // Si l'objet est valide, continue l'exécution du pipeline
             return await next(efiContext);
+        }
+
+        // Méthode utilitaire pour convertir les résultats de validation en un dictionnaire
+        private IDictionary<string, string[]> ToDictionary(IEnumerable<ValidationResult> results)
+        {
+            var dictionary = new Dictionary<string, string[]>();
+
+            foreach (var validationResult in results)
+            {
+                foreach (var memberName in validationResult.MemberNames)
+                {
+                    if (!dictionary.ContainsKey(memberName))
+                    {
+                        dictionary[memberName] = new string[] { validationResult.ErrorMessage };
+                    }
+                    else
+                    {
+                        var messages = dictionary[memberName].ToList();
+                        messages.Add(validationResult.ErrorMessage);
+                        dictionary[memberName] = messages.ToArray();
+                    }
+                }
+            }
+
+            return dictionary;
         }
     }
 }
 ```
 
-#### Explication du code
+### Explication :
 
-- **`GetArgument<Owner>(0)`** : Cette méthode récupère le premier argument du point de terminaison (ici, un objet de type `Owner`).
-- **`Validator.TryValidateObject`** : Effectue la validation en utilisant les annotations de validation définies dans le modèle `Owner`.
-- **`Results.ValidationProblem`** : Si l'objet est invalide, nous retournons une réponse contenant les erreurs de validation sous forme de `ValidationProblem`.
+1. **Généricité avec le type `T`** :
 
-#### Utilisation du Filtre dans le Point de Terminaison
+   - La classe `ValidationEndpointFilter<T>` est générique et peut être utilisée pour valider n'importe quel type d'objet.
+   - Cela permet de réutiliser le même filtre pour différents types (par exemple, `Owner`, `Product`, etc.), sans avoir à créer plusieurs filtres spécifiques.
 
-Voici un exemple d'utilisation de ce filtre dans un point de terminaison `POST` pour créer un objet `Owner` :
+2. **Validation avec `Validator.TryValidateObject`** :
+
+   - Le filtre utilise la méthode `Validator.TryValidateObject`, qui permet de valider un objet en fonction des annotations de validation définies sur ses propriétés (par exemple, `[Required]`, `[StringLength]`).
+   - Si l'objet est valide, le traitement continue avec `next(efiContext)` ; sinon, une réponse d'erreur de validation est renvoyée.
+
+3. **Méthode `ToDictionary`** :
+   - Cette méthode permet de convertir la liste des erreurs de validation en un format compatible avec `ValidationProblem`, où chaque clé est un nom de propriété et chaque valeur est une liste de messages d'erreur associés à cette propriété.
+
+#### 1.2. Utilisation du filtre dans un point de terminaison
+
+Une fois le filtre créé, vous pouvez l'utiliser dans un point de terminaison pour valider le modèle avant de l'enregistrer ou de l'utiliser dans votre logique.
+
+Voici un exemple d'utilisation du filtre dans un point de terminaison `POST` :
 
 ```csharp
 app.MapPost("/api/Owner/", async (Owner owner, ApplicationDbContext context) =>
@@ -69,11 +110,18 @@ app.MapPost("/api/Owner/", async (Owner owner, ApplicationDbContext context) =>
     await context.SaveChangesAsync();
     return Results.Created($"/api/Owners/{owner.Id}", owner);
 })
-.AddEndpointFilter<ValidationEndpointFilter>() // Application du filtre de validation
+.AddEndpointFilter<ValidationEndpointFilter<Owner>>()  // Application du filtre générique pour Owner
 .WithName("CreateOwner")
 .Produces<Owner>(StatusCodes.Status201Created)
 .Produces<Owner>(StatusCodes.Status400BadRequest);
 ```
+
+Dans cet exemple :
+
+- Le filtre `ValidationEndpointFilter<Owner>` est appliqué au point de terminaison.
+- Si l'objet `owner` est valide, la logique continue et l'objet est ajouté à la base de données. Si l'objet n'est pas valide, une réponse d'erreur de validation est renvoyée avec les détails de l'erreur.
+
+---
 
 ### 2. Validation avec **FluentValidation**
 
