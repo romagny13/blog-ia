@@ -1,5 +1,5 @@
 ---
-category: Web > Asp.Net Core
+category: Web > Asp.Net Core > Validation
 title: Validation Filter
 date: 2024-11-27
 author: Romagny13
