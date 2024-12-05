@@ -1,6 +1,6 @@
 ---
 category: Web > Asp.Net Core
-title: Identity
+title: Identity Asp.Net Core Api
 date: 2024-11-27
 author: Romagny13
 ---
