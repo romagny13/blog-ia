@@ -1,5 +1,5 @@
 ---
-category: ORM
+category: ORM > EF Core
 title: EF Core
 date: 2024-11-27
 author: Romagny13
