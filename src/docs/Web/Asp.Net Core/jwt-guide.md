@@ -70,7 +70,7 @@ Pour commencer, il est nécessaire d’ajouter le package `Microsoft.AspNetCore.
 Si votre API tourne localement :
 
 - **Issuer** : `https://localhost:5001` (l'émetteur du token est l'API elle-même).
-- **Audience** : `https://localhost:5173` (le destinataire est une application frontend).
+- **Audience** : `http://localhost:5173` (le destinataire est une application frontend).
 
 Dans une architecture complexe, **Issuer** pourrait être un service d'identité externe (comme Auth0), et **Audience** représenterait une API consommant le token.
 
