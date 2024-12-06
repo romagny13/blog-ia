@@ -754,7 +754,7 @@ public async Task<IActionResult> Login([FromBody] UserForAuthenticationDto userF
             HttpOnly = true,  // Assure que le cookie n'est pas accessible via JavaScript
             Secure = true,    // Le cookie est envoyé uniquement via HTTPS
             SameSite = SameSiteMode.Strict,  // Protéger contre les attaques CSRF
-            Expires = DateTime.UtcNow.AddDays(7)  // Durée de vie du refresh token
+            Expires = DateTime.UtcNow.AddDays(int.Parse(_configuration["Jwt:RefreshTokenExpirationDays"]))   // Durée de vie du refresh token
         });
 
         return Ok(new { AccessToken = tokens.AccessToken });
