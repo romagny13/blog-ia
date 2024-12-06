@@ -782,9 +782,7 @@ public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto 
         // Récupérer le Refresh Token depuis les cookies
         var refreshToken = Request.Cookies["refreshToken"];
         if (string.IsNullOrEmpty(refreshToken))
-        {
-            return Unauthorized(new { message = "Refresh token not found in cookies" });
-        }
+            return Unauthorized(new { message = "Refresh token pas trouvé dans les cookies" });
 
         // Appeler la méthode pour rafraîchir le token en utilisant l'Access Token et le Refresh Token
         var tokens = await _authService.RefreshToken(refreshTokenRequest.AccessToken, refreshToken);
@@ -795,7 +793,7 @@ public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto 
             HttpOnly = true,  // Assurer la sécurité du cookie
             Secure = true,    // Envoyer uniquement sur HTTPS
             SameSite = SameSiteMode.Strict,  // Protéger contre les attaques CSRF
-            Expires = DateTime.UtcNow.AddDays(7)  // Durée du Refresh Token
+            Expires = DateTime.UtcNow.AddDays(int.Parse(_configuration["Jwt:RefreshTokenExpirationDays"]))  // Durée du Refresh Token
         });
 
         // Retourner le nouveau Access Token
@@ -872,7 +870,7 @@ private async Task<TokenResult> GenerateToken(User user)
     {
         Token = refreshToken,
         UserId = user.Id,
-        Expires = DateTime.UtcNow.AddDays(7),  // Durée de vie du Refresh Token
+        Expires = DateTime.UtcNow.AddDays(int.Parse(_configuration["Jwt:RefreshTokenExpirationDays"])),  // Durée de vie du Refresh Token
         Created = DateTime.UtcNow,
         IsRevoked = false
     };
