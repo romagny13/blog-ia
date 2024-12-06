@@ -11,7 +11,7 @@ Ce guide détaille une approche sécurisée, évolutive et bien structurée pour
 
 ---
 
-### 1. **Comprendre les Rôles des Tokens**
+## 1. **Comprendre les Rôles des Tokens**
 
 - **Access Token** :
   - Utilisé pour authentifier les requêtes API.
@@ -24,7 +24,7 @@ Ce guide détaille une approche sécurisée, évolutive et bien structurée pour
 
 ---
 
-### 2. **Adopter JWT pour les Access Tokens**
+## 2. **Adopter JWT pour les Access Tokens**
 
 Les **JSON Web Tokens (JWT)** sont stateless, flexibles et largement supportés.
 
@@ -41,153 +41,360 @@ Les **JSON Web Tokens (JWT)** sont stateless, flexibles et largement supportés.
 
 ---
 
-### 3. **Exemple de Génération et Validation des JWT**
+## 3. Packages
 
-#### Génération :
+### Installation des dépendances
 
-Créez un service pour générer les tokens.
+Pour commencer, il est nécessaire d’ajouter le package `Microsoft.AspNetCore.Authentication.JwtBearer` à votre projet ASP.NET Core. Ce package fournit les outils pour intégrer l'authentification basée sur JWT.
 
-```csharp
-public class TokenService
-{
-    private readonly IConfiguration _configuration;
+- **Depuis la console Package Manager (PMC)** :
+  ```bash
+  Install-Package Microsoft.AspNetCore.Authentication.JwtBearer
+  ```
+- **Dans le fichier `.csproj`**, en fonction de votre version du framework :
+  ```xml
+  <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.36" />
+  ```
 
-    public TokenService(IConfiguration configuration)
-    {
-        _configuration = configuration;
-    }
+---
 
-    public string GenerateAccessToken(IEnumerable<Claim> claims)
-    {
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+## 4. Issuer et Audience
 
-        var token = new JwtSecurityToken(
-            issuer: _configuration["Jwt:Issuer"],
-            audience: _configuration["Jwt:Audience"],
-            claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(int.Parse(_configuration["Jwt:AccessTokenExpirationMinutes"])),
-            signingCredentials: creds);
+### Concepts
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
-    }
+- **Issuer** : L'**émetteur** est l'entité responsable de la génération du token. Cela permet de vérifier que le token provient d'une source fiable. Généralement, c'est l'URL de l'API ou du service générant le token.
+- **Audience** : Le **public visé** est l'application ou le service qui consomme le token. Cela empêche qu'un token destiné à un service soit utilisé par un autre.
+
+### Exemple Pratique
+
+Si votre API tourne localement :
+
+- **Issuer** : `https://localhost:5001` (l'émetteur du token est l'API elle-même).
+- **Audience** : `https://localhost:5173` (le destinataire est une application frontend).
+
+Dans une architecture complexe, **Issuer** pourrait être un service d'identité externe (comme Auth0), et **Audience** représenterait une API consommant le token.
+
+---
+
+## 5. Configuration
+
+### Paramètres dans `appsettings.json`
+
+Les paramètres liés à JWT sont souvent définis dans les fichiers `appsettings.json`. Voici deux exemples : un pour l’environnement de **développement** et un pour **production**.
+
+#### appsettings.Development.json
+
+```json
+"Jwt": {
+  "Issuer": "https://localhost:5001",
+  "Audience": "http://localhost:5173",
+  "AccessTokenExpirationMinutes": "15",
+  "RefreshTokenExpirationDays": "7",
+  "JWT_SECRET_KEY": "votre-cle-secrete-super-securisee-et-unique-pour-les-tests"
 }
 ```
 
-#### Middleware de Validation :
+- **JWT_SECRET_KEY** : Une clé secrète utilisée pour signer les tokens. Elle doit être longue et sécurisée.
+- **AccessTokenExpirationMinutes** : Durée de vie en minutes du jeton d'accès.
+- **RefreshTokenExpirationDays** : Durée de vie des jetons de rafraîchissement.
 
-Configurez le middleware JWT.
+#### appsettings.Production.json
+
+```json
+"KeyVault": {
+  "Url": "https://my-keyvault.vault.azure.net/"
+},
+"Jwt": {
+  "Issuer": "https://my-api.azurewebsites.net",
+  "Audience": "https://my-react-app.azurewebsites.net",
+  "AccessTokenExpirationMinutes": "15",
+  "RefreshTokenExpirationDays": "7"
+}
+```
+
+- En **production**, les secrets sensibles (comme `JWT_SECRET_KEY`) sont généralement stockés dans un service comme **Azure Key Vault** pour des raisons de sécurité.
+
+---
+
+### Chargement des paramètres dans `Program.cs`
+
+Le fichier `Program.cs` est le point d’entrée où vous configurez les services. Voici comment gérer les configurations JWT et Key Vault.
+
+#### Explications
+
+- **Détection de l'environnement** : Identifie si l'application est en mode `Development` ou `Production`.
+- **Chargement depuis Key Vault** : En production, les clés secrètes sont récupérées depuis **Azure Key Vault**.
+
+#### Code
 
 ```csharp
-services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+var environment = builder.Environment.EnvironmentName; // "Development" ou "Production"
+
+if (environment == "Production")
+{
+    var keyVaultUrl = builder.Configuration["KeyVault:Url"];
+    if (!string.IsNullOrEmpty(keyVaultUrl))
     {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = Configuration["Jwt:Issuer"],
-            ValidAudience = Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]))
-        };
-    });
+        builder.Configuration.AddAzureKeyVault(new Uri(keyVaultUrl), new DefaultAzureCredential());
+    }
+}
+else
+{
+    builder.Configuration.AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true);
+}
 ```
 
 ---
 
-### 4. **Gérer et Sécuriser les Refresh Tokens**
+### Middleware pour JWT
 
-Les refresh tokens doivent être gérés avec soin pour éviter leur compromission.
+L'étape suivante est d’ajouter l’authentification JWT dans le pipeline.
 
-#### Génération :
+#### Explications
 
-Utilisez un générateur cryptographiquement sûr.
+- **Validation des tokens** : Configure les règles pour vérifier que le token est valide (émetteur, audience, signature, durée de vie, etc.).
+- **Clé secrète** : Utilisée pour décoder la signature du token.
+
+#### Code
 
 ```csharp
-public string GenerateRefreshToken()
+builder.Services.AddAuthentication(options =>
 {
-    var randomNumber = new byte[32];
-    using (var rng = RandomNumberGenerator.Create())
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
     {
-        rng.GetBytes(randomNumber);
-        return Convert.ToBase64String(randomNumber);
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings.Issuer,
+        ValidAudience = jwtSettings.Audience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.JWT_SECRET_KEY))
+    };
+});
+```
+
+---
+
+## 6. Token Service
+
+### Explications
+
+Un **service de token** centralise la logique liée aux tokens (génération, validation, etc.). Cela permet une gestion plus claire et réutilisable.
+
+#### Fonctions Clés
+
+1. **GenerateAccessToken** : Crée un token JWT avec des claims spécifiques.
+2. **GenerateRefreshToken** : Génère un token de rafraîchissement unique.
+3. **GetPrincipalFromExpiredToken** : Extrait les informations d’un token expiré (utile pour le renouvellement).
+
+#### Code
+
+Interface ITokenService
+
+```csharp
+public interface ITokenService
+{
+    string GenerateAccessToken(IEnumerable<Claim> claims);
+    string GenerateRefreshToken();
+    ClaimsPrincipal GetPrincipalFromExpiredToken(string token);
+}
+```
+
+Implémentation du Service
+
+```csharp
+public class TokenService : ITokenService
+{
+    // Constructeur pour injecter les paramètres JWT
+    public TokenService(JwtSettings jwtSettings)
+    {
+        _jwtSettings = jwtSettings;
+    }
+
+    public string GenerateAccessToken(IEnumerable<Claim> claims)
+    {
+        // Utilisation de la clé secrète pour signer le token
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.JWT_SECRET_KEY));
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        // Création du token
+        var token = new JwtSecurityToken(
+            issuer: _jwtSettings.Issuer,
+            audience: _jwtSettings.Audience,
+            claims: claims,
+            expires: DateTime.UtcNow.AddMinutes(int.Parse(_jwtSettings.AccessTokenExpirationMinutes)),
+            signingCredentials: creds);
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    public string GenerateRefreshToken()
+    {
+        // Génère un token aléatoire pour le rafraîchissement
+        var randomNumber = new byte[32];
+        using (var rng = RandomNumberGenerator.Create())
+        {
+            rng.GetBytes(randomNumber);
+            return Convert.ToBase64String(randomNumber);
+        }
+    }
+
+    public ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
+    {
+        // Permet de récupérer les informations même si le token est expiré
+        var key = Encoding.ASCII.GetBytes(_jwtSettings.JWT_SECRET_KEY);
+        var tokenHandler = new JwtSecurityTokenHandler();
+
+        try
+        {
+            var principal = tokenHandler.ValidateToken(token, new TokenValidationParameters
+            {
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                ValidateLifetime = false,
+                IssuerSigningKey = new SymmetricSecurityKey(key)
+            }, out SecurityToken validatedToken);
+
+            return principal;
+        }
+        catch
+        {
+            return null;
+        }
     }
 }
 ```
 
-#### Stockage :
+---
 
-- Enregistrez les refresh tokens dans une base de données sécurisée.
-- Assurez-vous qu’ils sont liés à un utilisateur et qu’ils expirent après une période définie.
-- Exemple de modèle :
+## 7. Gestion des Refresh Tokens
+
+### Explications
+
+Les tokens de rafraîchissement permettent de renouveler un token JWT expiré sans demander à l'utilisateur de se reconnecter. Ils sont stockés en base de données pour validation et révocation si nécessaire.
+
+### Entité RefreshToken
 
 ```csharp
 public class RefreshToken
 {
     public int Id { get; set; }
-    public string Token { get; set; }
     public string UserId { get; set; }
+    public string Token { get; set; }
     public DateTime Expires { get; set; }
     public bool IsRevoked { get; set; }
+    public DateTime Created { get; set; }
+    public DateTime? Revoked { get; set; }
+}
+```
+
+### Repository
+
+Un **repository** encapsule la logique d'accès à la base de données pour gérer les tokens.
+
+#### Code
+
+```csharp
+public class RefreshTokenRepository : IRefreshTokenRepository
+{
+    private readonly ApplicationDbContext _context;
+
+    public RefreshTokenRepository(ApplicationDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<RefreshToken> GetByTokenAsync(string token)
+    {
+        return await _context.RefreshTokens
+            .FirstOrDefaultAsync(rt => rt.Token == token && !rt.IsRevoked);
+    }
+
+    public async Task<RefreshToken> GetByUserIdAsync(string userId)
+    {
+        return await _context.RefreshTokens
+            .FirstOrDefaultAsync(rt => rt.UserId == userId && !rt.IsRevoked);
+    }
+
+    public async Task AddAsync(RefreshToken refreshToken)
+    {
+        await _context.RefreshTokens.AddAsync(refreshToken);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<bool> RevokeAsync(string token)
+    {
+        var refreshToken = await _context.RefreshTokens
+            .FirstOrDefaultAsync(rt => rt.Token == token);
+
+        if (refreshToken != null)
+        {
+            refreshToken.IsRevoked = true;
+            refreshToken.Revoked = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+        return false;
+    }
 }
 ```
 
 ---
 
-### 5. **Configurer une Rotation des Refresh Tokens**
+### Génération des Tokens
 
-Pour limiter l’impact des tokens volés :
+Lorsqu'un utilisateur se connecte, un **token d'accès** et un **token de rafraîchissement** sont générés et retournés. Ces tokens permettent d'assurer une gestion sécurisée de l'authentification et du renouvellement de session.
 
-- Invalidez le refresh token utilisé et générez-en un nouveau.
-- Stockez le nouveau token et marquez l’ancien comme révoqué.
+### Types de génération de tokens :
 
-#### Exemple d’Endpoint pour la Rotation :
+- **Login** : Création des tokens après une connexion classique (avec un nom d'utilisateur et un mot de passe).
+- **ExternalLogin** : Création des tokens après une connexion via un fournisseur externe (par exemple, Google, Facebook, etc.).
+- **RefreshToken** : Utilisation d'un **refresh token** pour obtenir un nouveau **token d'accès** lorsque celui-ci a expiré.
+
+Ces actions de génération de tokens sont généralement effectuées dans le **`AuthService`** ou le **`AuthController`** de l'application.
 
 ```csharp
-[HttpPost("refresh-token")]
-public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
+private async Task<object> GenerateToken(User user)
 {
-    var existingToken = await _context.RefreshTokens
-        .FirstOrDefaultAsync(rt => rt.Token == request.RefreshToken && !rt.IsRevoked && rt.Expires > DateTime.UtcNow);
-
-    if (existingToken == null)
-        return Unauthorized("Invalid or expired refresh token.");
-
-    // Révoquez l'ancien token
-    existingToken.IsRevoked = true;
-
-    // Générez un nouveau token
-    var newAccessToken = _tokenService.GenerateAccessToken(new List<Claim>
+    var claims = new List<Claim>
     {
-        new Claim(JwtRegisteredClaimNames.Sub, existingToken.UserId)
-    });
+        new Claim(ClaimTypes.NameIdentifier, user.Id),
+        new Claim(JwtRegisteredClaimNames.Email, user.Email),
+        new Claim(ClaimTypes.Name, user.UserName)
+    };
 
-    var newRefreshToken = _tokenService.GenerateRefreshToken();
+    var roles = await _userManager.GetRolesAsync(user);
+    foreach (var role in roles)
+    {
+        claims.Add(new Claim(ClaimTypes.Role, role));
+    }
 
+    var accessToken = _tokenService.GenerateAccessToken(claims);
+    var refreshToken = _tokenService.GenerateRefreshToken();
+
+    // Enregistre le Refresh Token en base
     var refreshTokenEntity = new RefreshToken
     {
-        Token = newRefreshToken,
-        UserId = existingToken.UserId,
-        Expires = DateTime.UtcNow.AddDays(7),
+        Token = refreshToken,
+        UserId = user.Id,
+        Expires = DateTime.UtcNow.AddDays(int.Parse(_configuration["Jwt:RefreshTokenExpirationDays"])),
+        Created = DateTime.UtcNow,
         IsRevoked = false
     };
 
-    _context.RefreshTokens.Add(refreshTokenEntity);
-    await _context.SaveChangesAsync();
+    await _refreshTokenRepository.AddAsync(refreshTokenEntity);
 
-    return Ok(new
-    {
-        AccessToken = newAccessToken,
-        RefreshToken = newRefreshToken
-    });
+    return new { AccessToken = accessToken, RefreshToken = refreshToken };
 }
 ```
 
----
-
-### 6. **Sécuriser les Communications**
+### 8. **Sécuriser les Communications**
 
 1. **Utilisez HTTPS** : Évitez toute interception de tokens.
 2. **Minimisez les Claims** : Incluez uniquement les informations nécessaires.
@@ -197,7 +404,7 @@ public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest req
 
 ---
 
-### 7. **Configurer des Endpoints Sécurisés**
+### 9. **Configurer des Endpoints Sécurisés**
 
 1. **/login** : Authentifie l'utilisateur et délivre les tokens.
 2. **/refresh-token** : Rafraîchit les tokens.
@@ -205,14 +412,14 @@ public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest req
 
 ---
 
-### 8. **Surveiller et Logger les Activités**
+### 10. **Surveiller et Logger les Activités**
 
 - Loggez les utilisations des tokens, les échecs de validation et les anomalies.
 - Implémentez un mécanisme d’alerte pour les tentatives de rafraîchissement excessives.
 
 ---
 
-### 9. **Résumé des Meilleures Pratiques**
+### 11. **Résumé des Meilleures Pratiques**
 
 1. **JWT pour les Access Tokens** avec une signature sécurisée.
 2. **Refresh Tokens** stockés côté serveur, avec gestion des expirations et révocations.
