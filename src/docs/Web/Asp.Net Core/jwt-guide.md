@@ -190,7 +190,7 @@ Un **service de token** centralise la logique liée aux tokens (génération, va
 
 #### Code
 
-Interface ITokenService
+Interface **`ITokenService`**
 
 ```csharp
 public interface ITokenService
@@ -201,7 +201,7 @@ public interface ITokenService
 }
 ```
 
-Implémentation du Service
+Implémentation de **`TokenService`**
 
 ```csharp
 public class TokenService : ITokenService
