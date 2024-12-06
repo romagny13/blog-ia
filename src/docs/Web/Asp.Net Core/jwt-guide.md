@@ -893,3 +893,247 @@ private async Task<TokenResult> GenerateToken(User user)
 
 Les tokens d'accès (Access Tokens) ont une durée de vie limitée. Les Refresh Tokens sont utilisés pour obtenir un nouveau Access Token sans redemander une authentification complète. En conséquence, il est essentiel de gérer la durée de vie des Refresh Tokens, de vérifier leur validité régulièrement, et de révoquer les tokens expirés ou compromis.
 
+### **13. Supporter les modes HttpOnly et Local Storage avec un client React**
+
+---
+
+### **Introduction**
+
+Ceci vous explique comment gérer à la fois les **HttpOnly Cookies** et le **Local Storage** pour stocker et rafraîchir les tokens d'authentification. Nous couvrirons :
+- La détection des cookies côté client.
+- L'adaptation du serveur et du client pour gérer ces deux modes.
+- Une comparaison des avantages et des risques liés à chaque méthode.
+
+---
+
+#### **Étape 1 : Détection des cookies côté client**
+
+##### **Vérifier si les cookies sont activés**
+Côté client, vous pouvez vérifier si les cookies fonctionnent en testant une requête qui utilise les cookies HttpOnly. 
+
+Ajoutez une route simple sur votre serveur, comme un endpoint `/api/ping` :
+
+```csharp
+[HttpGet("ping")]
+public IActionResult Ping()
+{
+    return Ok(new { message = "Cookies are working" });
+}
+```
+
+Côté React :
+
+```javascript
+const checkCookiesEnabled = async () => {
+    try {
+        const response = await fetch('/api/ping', {
+            method: 'GET',
+            credentials: 'include', // Inclut les cookies HTTP-only
+        });
+
+        if (response.ok) {
+            return true; // Les cookies fonctionnent
+        }
+    } catch (error) {
+        console.error("Cookies are not enabled or blocked.", error);
+    }
+    return false; // Basculer sur le Local Storage
+};
+```
+
+---
+
+#### **Étape 2 : Configurer l'API ASP.NET Core**
+
+##### **Configurer l'authentification**
+Ajoutez le support pour JWT et HttpOnly Cookies :
+
+```csharp
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings.Issuer,
+        ValidAudience = jwtSettings.Audience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.JWT_SECRET_KEY))
+    };
+})
+.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+{
+    options.Cookie.HttpOnly = true; 
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; 
+    options.Cookie.SameSite = SameSiteMode.Strict; 
+    options.Cookie.Name = "RefreshTokenCookie";
+    options.ExpireTimeSpan = TimeSpan.FromDays(7); 
+});
+```
+
+---
+
+##### **Gestion des deux modes dans les endpoints**
+
+###### Endpoint : Login
+Ajoutez une logique pour vérifier si le client supporte les cookies :
+
+```csharp
+[HttpPost("login")]
+public async Task<IActionResult> Login([FromBody] UserForAuthenticationDto userForAuthentication)
+{
+    try
+    {
+        var tokens = await _authService.Login(userForAuthentication);
+
+        if (Request.Headers.ContainsKey("Use-Cookie") && Request.Headers["Use-Cookie"] == "true")
+        {
+            Response.Cookies.Append("refreshToken", tokens.RefreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddDays(7)
+            });
+            return Ok(new { accessToken = tokens.AccessToken });
+        }
+        else
+        {
+            return Ok(new { accessToken = tokens.AccessToken, refreshToken = tokens.RefreshToken });
+        }
+    }
+    catch (Exception ex)
+    {
+        return StatusCode(500, new { message = "Erreur interne du serveur.", error = ex.Message });
+    }
+}
+```
+
+###### Endpoint : Refresh Token
+Gérez les deux modes pour rafraîchir les tokens :
+
+```csharp
+[HttpPost("refresh-token")]
+public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto refreshTokenRequest)
+{
+    try
+    {
+        string refreshToken;
+
+        if (Request.Cookies.ContainsKey("refreshToken"))
+        {
+            refreshToken = Request.Cookies["refreshToken"]; // Mode HttpOnly Cookie
+        }
+        else if (!string.IsNullOrEmpty(refreshTokenRequest.RefreshToken))
+        {
+            refreshToken = refreshTokenRequest.RefreshToken; // Mode Local Storage
+        }
+        else
+        {
+            return Unauthorized(new { message = "Refresh token manquant" });
+        }
+
+        var tokens = await _authService.RefreshToken(refreshTokenRequest.AccessToken, refreshToken);
+
+        if (Request.Cookies.ContainsKey("refreshToken"))
+        {
+            Response.Cookies.Append("refreshToken", tokens.RefreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddDays(7)
+            });
+        }
+
+        return Ok(new { accessToken = tokens.AccessToken, refreshToken = tokens.RefreshToken });
+    }
+    catch (Exception ex)
+    {
+        return StatusCode(500, new { message = "Erreur interne du serveur.", error = ex.Message });
+    }
+}
+```
+
+---
+
+#### **Étape 3 : Côté client React**
+
+##### **Utiliser les modes cookies et local storage**
+
+Ajoutez une logique dans vos appels pour envoyer une préférence de mode :
+
+```javascript
+const API_URL = "https://your-api-url.com";
+
+const USE_COOKIE_MODE = await checkCookiesEnabled();
+
+export async function login(credentials) {
+    const response = await fetch(`${API_URL}/login`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Use-Cookie": USE_COOKIE_MODE.toString(),
+        },
+        body: JSON.stringify(credentials),
+    });
+
+    const data = await response.json();
+
+    if (!USE_COOKIE_MODE && response.ok) {
+        localStorage.setItem("accessToken", data.accessToken);
+        localStorage.setItem("refreshToken", data.refreshToken);
+    }
+
+    return data.accessToken;
+}
+
+export async function refreshToken() {
+    const accessToken = localStorage.getItem("accessToken");
+    const refreshToken = localStorage.getItem("refreshToken");
+
+    const response = await fetch(`${API_URL}/refresh-token`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            accessToken,
+            refreshToken: USE_COOKIE_MODE ? undefined : refreshToken,
+        }),
+    });
+
+    const data = await response.json();
+
+    if (!USE_COOKIE_MODE && response.ok) {
+        localStorage.setItem("accessToken", data.accessToken);
+        localStorage.setItem("refreshToken", data.refreshToken);
+    }
+
+    return data.accessToken;
+}
+```
+
+---
+
+#### **Étape 4 : Comparaison des modes**
+
+| **Critère**             | **HttpOnly Cookies**                     | **Local Storage**               |
+|--------------------------|------------------------------------------|----------------------------------|
+| **Sécurité**            | Très sécurisé (non accessible en JS).    | Moins sécurisé (accessible en JS). |
+| **Résistance CSRF**     | Oui                                      | Non (requiert des protections supplémentaires). |
+| **Accessibilité**       | Accessible uniquement côté serveur.      | Accessible côté client.         |
+| **Support utilisateur** | Bloqué si les cookies sont désactivés.   | Toujours disponible.            |
+
+---
+
+#### **Conclusion**
+- **HttpOnly Cookies** sont plus sécurisés et doivent être le mode par défaut si possible.  
+- **Local Storage** offre une alternative moins sécurisée mais utile si les cookies sont refusés.  
+- Implémentez la logique pour détecter automatiquement les cookies et adapter l’authentification en fonction.
