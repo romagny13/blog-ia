@@ -26,20 +26,245 @@ Ce guide détaille une approche sécurisée, évolutive et bien structurée pour
 
 ## 2. **Adopter JWT pour les Access Tokens**
 
-Les **JSON Web Tokens (JWT)** sont stateless, flexibles et largement supportés.
+Un **JWT** est un standard utilisé pour transmettre des informations de manière sécurisée entre deux parties (client et serveur). Les **JSON Web Tokens (JWT)** sont stateless, flexibles et largement supportés.
 
-#### Structure du JWT :
+### 1. **Structure d’un JWT**
 
-1. **Header** : Définit l'algorithme de signature (par ex., HS256 ou RS256).
-2. **Payload** : Contient les données utilisateur (claims).
-3. **Signature** : Valide l'intégrité du token.
+Un JWT est composé de trois parties séparées par des points (`.`) :
+```
+header.payload.signature
+```
 
-#### Avantages :
+| **Partie**  | **Description**                                                                                             | **Encodage**    |
+|-------------|-------------------------------------------------------------------------------------------------------------|-----------------|
+| `header`    | Métadonnées : algorithme de signature (`alg`), type (`typ`).                                                | Base64URL       |
+| `payload`   | Données ou "claims" : informations sur le sujet ou des données personnalisées.                              | Base64URL       |
+| `signature` | Garantit l'intégrité du token. Basée sur le `header` et le `payload` signés avec une clé secrète ou privée. | Non décodable   |
 
-- Pas besoin de requêtes serveur pour valider un JWT.
-- Peut inclure des données pertinentes comme les rôles, permissions, etc.
+Exemple de JWT :
+```
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+```
 
 ---
+
+### 2. **Claims dans le Payload**
+
+Le **payload** contient des données, appelées **claims**. Ces claims peuvent être **standards** (définis par la RFC 7519) ou **personnalisés**.
+
+### Claims standards courants
+
+| **Claim**   | **Description**                                                                             | **Exemple**               |
+|-------------|---------------------------------------------------------------------------------------------|---------------------------|
+| `iss`       | **Issuer** : Identifie l'émetteur du token.                                                 | `"https://api.example.com"` |
+| `sub`       | **Subject** : Identifie le sujet principal (souvent un ID utilisateur).                     | `"1234567890"`            |
+| `aud`       | **Audience** : Destinataire prévu du token.                                                 | `"https://my-app.com"`    |
+| `exp`       | **Expiration** : Timestamp indiquant quand le token expire.                                 | `1719235200`              |
+| `nbf`       | **Not Before** : Timestamp indiquant quand le token devient valide.                         | `1719158800`              |
+| `iat`       | **Issued At** : Timestamp d'émission.                                                      | `1719158800`              |
+| `jti`       | **JWT ID** : Identifiant unique du token.                                                  | `"abc123"`                |
+
+#### Claims personnalisés (exemples)
+- `name`: Nom complet de l’utilisateur (ex. `"John Doe"`).
+- `email`: Adresse email (ex. `"user@example.com"`).
+- `role`: Rôle utilisateur (ex. `"admin"`).
+- `permissions`: Liste des autorisations (ex. `["read", "write"]`).
+
+---
+
+### 3. **Différence entre `sub` et `NameIdentifier`**
+
+| **Aspect**          | **`sub` (Subject)**                         | **`NameIdentifier`**                     |
+|----------------------|---------------------------------------------|------------------------------------------|
+| Standardisation      | Défini par la spécification JWT.            | Claim personnalisé ou spécifique au système. |
+| Usage               | Identifiant unique principal.               | Utilisé dans certains frameworks (ex. ASP.NET). |
+| Exemple             | `"sub": "1234567890"`                       | `"nameid": "user123"`                    |
+
+---
+
+### 4. **Pourquoi un JWT est sécurisé**
+
+- **Signature numérique** :
+  - Le JWT est signé avec une clé secrète ou privée.
+  - Le serveur peut recalculer la signature pour vérifier l'intégrité du token.
+- **Base64URL (non cryptage)** :
+  - Le `header` et le `payload` sont encodés en Base64URL pour être lisibles, mais non sécurisés.
+  - La sécurité repose uniquement sur la signature.
+
+**⚠️ Ne jamais inclure d’informations sensibles non chiffrées dans le payload.**
+
+---
+
+### 5. **Décoder le Payload d’un JWT**
+
+#### Exemple en **JavaScript**
+1. Découper le JWT en trois parties.
+2. Décoder la partie `payload` (2ᵉ partie) en Base64URL.
+3. Parser la chaîne JSON obtenue.
+
+```javascript
+const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+
+const payloadEncoded = token.split('.')[1];
+const payloadDecoded = JSON.parse(atob(payloadEncoded.replace(/-/g, '+').replace(/_/g, '/')));
+console.log(payloadDecoded);
+```
+
+**Résultat** :
+```json
+{
+  "sub": "1234567890",
+  "name": "John Doe",
+  "iat": 1516239022
+}
+```
+
+---
+
+#### Exemple en **C#**
+1. Découper le JWT en trois parties.
+2. Décoder la partie `payload` en Base64URL.
+3. Désérialiser la chaîne JSON obtenue.
+
+```csharp
+using System;
+using System.Text;
+using System.Text.Json;
+
+string token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+
+// Extraire le payload (2ᵉ partie)
+string payloadEncoded = token.Split('.')[1];
+
+// Décoder Base64URL
+string payloadDecoded = Encoding.UTF8.GetString(
+    Convert.FromBase64String(payloadEncoded + new string('=', (4 - payloadEncoded.Length % 4) % 4))
+);
+
+// Désérialiser en objet
+var payload = JsonSerializer.Deserialize<JsonElement>(payloadDecoded);
+Console.WriteLine(payload);
+```
+
+**Résultat** (affiché dans la console) :
+```json
+{
+  "sub": "1234567890",
+  "name": "John Doe",
+  "iat": 1516239022
+}
+```
+
+---
+
+### 6. **Bibliothèques**
+
+#### 1. **JavaScript**
+
+#### a. [jsonwebtoken (npm)](https://www.npmjs.com/package/jsonwebtoken)
+La bibliothèque la plus utilisée pour gérer les JWT dans Node.js.
+
+**Installation** :
+```bash
+npm install jsonwebtoken
+```
+
+**Exemple** :
+```javascript
+const jwt = require('jsonwebtoken');
+const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+
+const decoded = jwt.decode(token); // Décodage sans vérification de signature
+console.log(decoded);
+```
+
+#### b. [jwt-decode (npm)](https://www.npmjs.com/package/jwt-decode)
+Une bibliothèque légère uniquement pour décoder les tokens JWT sans vérification de signature.
+
+**Installation** :
+```bash
+npm install jwt-decode
+```
+
+**Exemple** :
+```javascript
+import jwtDecode from "jwt-decode";
+const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+
+const payload = jwtDecode(token);
+console.log(payload);
+```
+
+---
+
+#### 2. **C#**
+
+##### a. [System.IdentityModel.Tokens.Jwt (NuGet)](https://www.nuget.org/packages/System.IdentityModel.Tokens.Jwt)
+Bibliothèque officielle pour manipuler les JWT dans les applications .NET.
+
+**Installation** :
+```bash
+dotnet add package System.IdentityModel.Tokens.Jwt
+```
+
+**Exemple** :
+```csharp
+using System.IdentityModel.Tokens.Jwt;
+
+string token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+
+// Décoder sans validation
+var handler = new JwtSecurityTokenHandler();
+var decodedToken = handler.ReadJwtToken(token);
+Console.WriteLine(decodedToken.Payload);
+```
+
+##### b. [Jose.JWT (NuGet)](https://www.nuget.org/packages/Jose.JWT)
+Une bibliothèque légère pour manipuler les JWT, compatible avec divers algorithmes de signature.
+
+**Installation** :
+```bash
+dotnet add package Jose.JWT
+```
+
+**Exemple** :
+```csharp
+using Jose;
+
+string token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+string payload = JWT.Decode(token, null, JwsAlgorithm.None); // Décodage sans clé
+Console.WriteLine(payload);
+```
+
+---
+
+### 6. **Bonnes pratiques**
+
+- **Standardiser vos claims** : Utilisez les claims standard (`sub`, `iss`, etc.) pour maximiser l’interopérabilité.
+- **Limiter les données dans le payload** : Réduisez la taille et évitez d’exposer des informations inutiles.
+- **Protéger le token** :
+  - Stockez-le en toute sécurité (ex. `HttpOnly` cookies pour éviter les attaques XSS).
+  - Utilisez TLS pour protéger les échanges.
+
+---
+
+#### Exemple complet de JWT
+
+```json
+{
+  "header": {
+    "alg": "HS256",
+    "typ": "JWT"
+  },
+  "payload": {
+    "sub": "1234567890",
+    "name": "John Doe",
+    "iat": 1516239022,
+    "role": "admin"
+  },
+  "signature": "SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+}
+```
 
 ## 3. Packages
 
