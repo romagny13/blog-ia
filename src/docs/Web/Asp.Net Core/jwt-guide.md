@@ -474,19 +474,24 @@ public class TokenService : ITokenService
 
     public ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
     {
-        // Permet de récupérer les informations même si le token est expiré
         var key = Encoding.ASCII.GetBytes(_jwtSettings.JWT_SECRET_KEY);
         var tokenHandler = new JwtSecurityTokenHandler();
 
         try
         {
-            var principal = tokenHandler.ValidateToken(token, new TokenValidationParameters
+            var validationParameters = new TokenValidationParameters
             {
                 ValidateIssuer = false,
                 ValidateAudience = false,
-                ValidateLifetime = false,
-                IssuerSigningKey = new SymmetricSecurityKey(key)
-            }, out SecurityToken validatedToken);
+                // ValidateIssuerSigningKey = true, // Valide que la signature du token correspond à la clé de signature attendue
+                ValidateLifetime = false, // Ne pas valider la date d'expiration
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                // ClockSkew = TimeSpan.Zero // Désactive l'intervalle de tolérance de 5 minutes par défaut
+            };
+            var principal = tokenHandler.ValidateToken(token, validationParameters , out SecurityToken securityToken);
+            var jwtSecurityToken = securityToken as JwtSecurityToken;
+            if (jwtSecurityToken == null || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+                throw new SecurityTokenException("Token invalide");
 
             return principal;
         }
@@ -569,6 +574,33 @@ public class RefreshTokenRepository : IRefreshTokenRepository
             return true;
         }
         return false;
+    }
+}
+```
+
+**`AuthController`**
+
+```cs
+[Route("api/[controller]")]
+[ApiController]
+public class AuthController : ControllerBase
+{
+    [HttpPost("refresh-token")]
+    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto refreshTokenRequest)
+    {
+        try
+        {
+            var tokens = await _authService.RefreshToken(refreshTokenRequest);
+            return Ok(tokens);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Erreur interne du serveur.", error = ex.Message });
+        }
     }
 }
 ```
@@ -658,3 +690,208 @@ private async Task<object> GenerateToken(User user)
 ---
 
 En suivant ce guide, vous assurez une gestion sécurisée et efficace des tokens tout en respectant les principes d’un MVP. Vous pouvez progressivement ajouter des fonctionnalités avancées, telles que la journalisation centralisée ou une gestion fine des autorisations.
+
+### 12. **Silent Refresh**
+
+Le "Silent Refresh" est une méthode permettant de rafraîchir un jeton d'authentification (Access Token) de manière transparente pour l'utilisateur, sans qu'il ait à se reconnecter. Ce processus utilise un "Refresh Token" qui permet de générer un nouveau "Access Token" sans demander une nouvelle authentification.
+
+#### 1. **Configuration des services d'authentification**
+
+Dans le fichier `Startup.cs` ou `Program.cs`, vous devez configurer l'authentification via **JWT** pour les tokens d'accès et **Cookies** pour les tokens de rafraîchissement.
+
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    var jwtSettings = Configuration.GetSection("JwtSettings").Get<JwtSettings>();
+
+    services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings.Issuer,
+            ValidAudience = jwtSettings.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.JWT_SECRET_KEY))
+        };
+    })
+    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+    {
+        options.Cookie.HttpOnly = true; // Cookie non accessible via JavaScript
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Utiliser HTTPS uniquement
+        options.Cookie.SameSite = SameSiteMode.Strict; // Prévenir les attaques CSRF
+        options.Cookie.Name = "RefreshTokenCookie"; // Nom du cookie
+        options.ExpireTimeSpan = TimeSpan.FromDays(7); // Durée du refresh token
+    });
+}
+```
+
+**Explications :**
+- **JwtBearer** : Utilisé pour l'authentification des API via des tokens JWT.
+- **CookieAuthentication** : Utilisé pour stocker et gérer le "Refresh Token" dans un cookie sécurisé.
+
+#### 2. **Authentification et génération des tokens**
+
+Ensuite, nous devons créer un point de terminaison pour gérer l'authentification (login) et générer les tokens d'accès et de rafraîchissement.
+
+```csharp
+[HttpPost("login")]
+public async Task<IActionResult> Login([FromBody] UserForAuthenticationDto userForAuthentication)
+{
+    try
+    {
+        var tokens = await _authService.Login(userForAuthentication);
+
+        Response.Cookies.Append("refreshToken", tokens.RefreshToken, new CookieOptions
+        {
+            HttpOnly = true,  // Assure que le cookie n'est pas accessible via JavaScript
+            Secure = true,    // Le cookie est envoyé uniquement via HTTPS
+            SameSite = SameSiteMode.Strict,  // Protéger contre les attaques CSRF
+            Expires = DateTime.UtcNow.AddDays(7)  // Durée de vie du refresh token
+        });
+
+        return Ok(new { AccessToken = tokens.AccessToken });
+    }
+    catch (Exception ex)
+    {
+        return StatusCode(500, new { message = "Erreur interne du serveur.", error = ex.Message });
+    }
+}
+```
+
+**Explications :**
+- **Login** : Cette méthode authentifie l'utilisateur, génère un Access Token et un Refresh Token, puis stocke le Refresh Token dans un cookie sécurisé.
+
+#### 3. **Rafraîchissement des tokens (Silent Refresh)**
+
+Le point clé du "Silent Refresh" consiste à utiliser un Refresh Token pour obtenir un nouveau Access Token sans que l'utilisateur n'ait besoin de se reconnecter manuellement. Lorsqu'un Access Token expire, le client envoie le Refresh Token au serveur pour obtenir un nouveau Access Token.
+
+```csharp
+[HttpPost("refresh-token")]
+public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto refreshTokenRequest)
+{
+    try
+    {
+        // Récupérer le Refresh Token depuis les cookies
+        var refreshToken = Request.Cookies["refreshToken"];
+        if (string.IsNullOrEmpty(refreshToken))
+        {
+            return Unauthorized(new { message = "Refresh token not found in cookies" });
+        }
+
+        // Appeler la méthode pour rafraîchir le token en utilisant l'Access Token et le Refresh Token
+        var tokens = await _authService.RefreshToken(refreshTokenRequest.AccessToken, refreshToken);
+
+        // Mettre à jour le cookie avec le nouveau Refresh Token
+        Response.Cookies.Append("refreshToken", tokens.RefreshToken, new CookieOptions
+        {
+            HttpOnly = true,  // Assurer la sécurité du cookie
+            Secure = true,    // Envoyer uniquement sur HTTPS
+            SameSite = SameSiteMode.Strict,  // Protéger contre les attaques CSRF
+            Expires = DateTime.UtcNow.AddDays(7)  // Durée du Refresh Token
+        });
+
+        // Retourner le nouveau Access Token
+        return Ok(new { AccessToken = tokens.AccessToken });
+    }
+    catch (UnauthorizedAccessException ex)
+    {
+        return Unauthorized(new { message = ex.Message });
+    }
+    catch (Exception ex)
+    {
+        return StatusCode(500, new { message = "Erreur interne du serveur.", error = ex.Message });
+    }
+}
+```
+
+**Explications :**
+- **RefreshToken** : Cette méthode récupère le Refresh Token depuis les cookies, puis appelle la méthode `RefreshToken` du service d'authentification pour générer un nouveau Access Token.
+- **Cookies** : Le nouveau Refresh Token est stocké dans un cookie sécurisé, et un nouveau Access Token est renvoyé dans la réponse.
+
+#### 4. **Service d'authentification et génération des tokens**
+
+Le service d'authentification est responsable de la gestion des tokens. Il inclut la logique pour valider, générer, et rafraîchir les tokens.
+
+```csharp
+public async Task<TokenResult> RefreshToken(string accessToken, string refreshToken)
+{
+    // Récupérer les informations de l'utilisateur à partir du Access Token expiré
+    var principal = _tokenService.GetPrincipalFromExpiredToken(accessToken);
+    if (principal == null)
+        throw new UnauthorizedAccessException("Token invalide ou expiré.");
+
+    var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    var user = await _userManager.FindByIdAsync(userId);
+    if (user == null)
+        throw new UnauthorizedAccessException("Utilisateur non trouvé.");
+
+    // Vérifier la validité du Refresh Token
+    var token = await _refreshTokenRepository.GetByTokenAsync(refreshToken);
+    if (token == null || token.UserId != userId)
+        throw new UnauthorizedAccessException("Token invalide.");
+
+    if (token.Expires < DateTime.UtcNow)
+    {
+        await _refreshTokenRepository.RevokeAsync(token.Token);
+        throw new UnauthorizedAccessException("Token invalide.");
+    }
+
+    // Générer un nouveau Access Token et Refresh Token
+    return await GenerateToken(user);
+}
+
+private async Task<TokenResult> GenerateToken(User user)
+{
+    // Créer les claims pour le nouveau token
+    var claims = new List<Claim>
+    {
+        new Claim(ClaimTypes.NameIdentifier, user.Id),
+        new Claim(JwtRegisteredClaimNames.Email, user.Email),
+        new Claim(ClaimTypes.Name, user.UserName)
+    };
+    var roles = await _userManager.GetRolesAsync(user);
+    foreach (var role in roles)
+    {
+        claims.Add(new Claim(ClaimTypes.Role, role));
+    }
+
+    // Générer les tokens
+    var accessToken = _tokenService.GenerateAccessToken(claims);
+    var refreshToken = _tokenService.GenerateRefreshToken();
+
+    // Sauvegarder le Refresh Token dans la base de données
+    var refreshTokenEntity = new RefreshToken
+    {
+        Token = refreshToken,
+        UserId = user.Id,
+        Expires = DateTime.UtcNow.AddDays(7),  // Durée de vie du Refresh Token
+        Created = DateTime.UtcNow,
+        IsRevoked = false
+    };
+
+    await _refreshTokenRepository.AddAsync(refreshTokenEntity);
+
+    return new TokenResult
+    {
+        AccessToken = accessToken,
+        RefreshToken = refreshToken
+    };
+}
+```
+
+**Explications :**
+- **RefreshToken** : Cette méthode vérifie la validité du Refresh Token, valide l'Access Token expiré, et génère de nouveaux tokens si tout est valide.
+- **GenerateToken** : Cette méthode génère un nouvel Access Token et Refresh Token, et sauvegarde le Refresh Token dans la base de données.
+
+#### 5. **Sécurisation et gestion des tokens**
+
+Les tokens d'accès (Access Tokens) ont une durée de vie limitée. Les Refresh Tokens sont utilisés pour obtenir un nouveau Access Token sans redemander une authentification complète. En conséquence, il est essentiel de gérer la durée de vie des Refresh Tokens, de vérifier leur validité régulièrement, et de révoquer les tokens expirés ou compromis.
+
