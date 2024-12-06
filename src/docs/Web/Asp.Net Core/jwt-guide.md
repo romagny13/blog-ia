@@ -138,10 +138,6 @@ if (environment == "Production")
         builder.Configuration.AddAzureKeyVault(new Uri(keyVaultUrl), new DefaultAzureCredential());
     }
 }
-else
-{
-    builder.Configuration.AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true);
-}
 ```
 
 ---
