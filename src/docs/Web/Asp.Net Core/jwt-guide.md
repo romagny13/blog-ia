@@ -154,6 +154,13 @@ L'étape suivante est d’ajouter l’authentification JWT dans le pipeline.
 #### Code
 
 ```csharp
+// Chargement des settings
+//var jwtSettings = builder.Configuration.GetSection("Jwt");
+// ou
+var jwtSettings = builder.Configuration
+    .GetSection("Jwt")
+    .Get<JwtSettings>();
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
