@@ -48,7 +48,7 @@ window.addEventListener("scroll", () => {
 backToTopButton.addEventListener("click", () => {
   window.scrollTo({
     top: 0,
-    behavior: "smooth"
+    behavior: "smooth",
   });
 });
 ```
@@ -507,3 +507,125 @@ Les styles définissent le comportement et l'apparence du conteneur vidéo.
   ```
 
 Ce code est parfait pour des sites modernes avec des vidéos YouTube intégrées. 🎥
+
+## 4. Intégration d'un lecteur YouTube responsive en 16:9 avec l'API JavaScript
+
+Ce document explique comment intégrer un lecteur YouTube responsive au format 16:9 à l'aide de HTML, CSS et JavaScript. Ce guide est écrit pour les développeurs souhaitant créer une expérience utilisateur fluide et adaptée aux différents appareils.
+
+---
+
+### Code Complet
+
+Voici le code complet pour intégrer un lecteur YouTube.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lecteur YouTube Responsive</title>
+    <style>
+      .youtube-player-wrapper {
+        position: relative;
+        width: 100%;
+        padding-top: 56.25%; /* Ratio 16:9 (9 / 16 * 100) */
+      }
+
+      #player {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="youtube-player-wrapper">
+      <div id="player"></div>
+    </div>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script>
+      let player;
+      function onYouTubeIframeAPIReady() {
+        player = new YT.Player("player", {
+          videoId: "M7lc1UVf-VE", // Remplacez par l'ID de votre vidéo
+          events: {
+            onReady: onPlayerReady,
+            onStateChange: onPlayerStateChange,
+          },
+        });
+      }
+
+      function onPlayerReady(event) {
+        console.log("Le lecteur est prêt.");
+      }
+
+      function onPlayerStateChange(event) {
+        if (event.data === YT.PlayerState.ENDED) {
+          console.log("La vidéo est terminée.");
+        }
+      }
+    </script>
+  </body>
+</html>
+```
+
+---
+
+### Explication du Code
+
+#### 1. **Structure HTML**
+
+- **`<div class="youtube-player-wrapper">`** : Ce conteneur maintient le rapport d'aspect 16:9 pour le lecteur.
+- **`<div id="player">`** : Cet élément est remplacé par l'iframe du lecteur YouTube grâce à l'API.
+
+#### 2. **Styles CSS**
+
+- **`.youtube-player-wrapper`** :
+  - `position: relative` : Permet de positionner l'iframe dans un conteneur parent.
+  - `padding-top: 56.25%` : Crée un rapport d'aspect 16:9 (calculé comme 9 / 16 \* 100).
+- **`#player`** :
+  - `position: absolute` : Positionne l'iframe pour qu'elle occupe tout l'espace du conteneur.
+  - `width` et `height` : Adaptent la taille à celle du conteneur parent.
+
+#### 3. **Chargement de l'API YouTube**
+
+- **`<script src="https://www.youtube.com/iframe_api"></script>`** : Charge l'API JavaScript de YouTube.
+
+#### 4. **Initialisation du lecteur avec JavaScript**
+
+- **`onYouTubeIframeAPIReady`** : Fonction appelée automatiquement une fois l'API chargée.
+- **`YT.Player`** : Crée une instance du lecteur dans l'élément `#player`.
+  - `videoId` : ID de la vidéo à lire.
+  - `events` : Permet d'écouter des événements comme `onReady` ou `onStateChange`.
+
+#### 5. **Gestion des événements du lecteur**
+
+- **`onPlayerReady`** : Appelé lorsque le lecteur est prêt.
+- **`onPlayerStateChange`** : Détecte les changements d'état, par exemple, lorsque la vidéo se termine (`YT.PlayerState.ENDED`).
+
+---
+
+### Comment Modifier le Code
+
+- **Changer la vidéo** :
+
+  - Remplacez l'ID de la vidéo `M7lc1UVf-VE` par celui de la vidéo que vous souhaitez afficher.
+
+- **Ajouter des actions à la fin de la vidéo** :
+
+  - Modifiez la fonction `onPlayerStateChange` pour exécuter une action personnalisée.
+
+- **Ajuster la taille** :
+  - Le conteneur est adapté automatiquement, mais vous pouvez modifier la largeur en ajustant les styles CSS.
+
+---
+
+### Notes Importantes
+
+1. **Responsive Design** : Le lecteur est adapté à tous les appareils grâce au CSS.
+2. **Respect des règles de YouTube** : L'utilisation de l'API doit respecter les conditions d'utilisation de YouTube.
+3. **Compatibilité Navigateur** : Assurez-vous que votre site est compatible avec les navigateurs modernes.
