@@ -224,3 +224,72 @@ Ce guide explique comment configurer l'authentification Google OAuth 2.0 et impl
   </body>
 </html>
 ```
+
+## Connexion Google avec ID Token via Popup
+
+Ce guide explique comment mettre en place une authentification Google dans une application web en utilisant une fenêtre popup. Le processus utilise un `id_token` pour récupérer les informations de l'utilisateur après une connexion réussie.
+
+```javascript
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Google Auth - Popup</title>
+  </head>
+  <body>
+    <h1>Connexion Google (Popup)</h1>
+    <button id="loginBtn">Se connecter avec Google</button>
+    <div id="userInfo" style="display: none">
+      <p>Connecté en tant que : <span id="userName"></span></p>
+      <button onclick="logout()">Déconnexion</button>
+    </div>
+
+    <script>
+      const CLIENT_ID = "VOTRE_CLIENT_ID"; // Remplacez par votre Client ID
+      const REDIRECT_URI = "http://127.0.0.1:5500/popup.html";
+      const SCOPE = "email profile openid"; // Ajout du scope "openid" pour obtenir un ID Token
+
+      document.getElementById("loginBtn").addEventListener("click", () => {
+        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&response_type=id_token&redirect_uri=${encodeURIComponent(
+          REDIRECT_URI
+        )}&scope=${SCOPE}&nonce=randomNonceValue`;
+        const popup = window.open(
+          authUrl,
+          "GoogleLogin",
+          "width=600,height=600"
+        );
+
+        // Écoute les messages de la popup
+        window.addEventListener("message", (event) => {
+          if (event.origin !== window.location.origin) {
+            console.error("Origine non autorisée :", event.origin);
+            return;
+          }
+
+          // Traitement des données envoyées par la popup
+          const params = new URLSearchParams(event.data);
+          const idToken = params.get("id_token");
+
+          if (idToken) {
+            console.log(idToken);
+            // Décodage de l'ID Token pour obtenir les informations utilisateur
+            const payload = JSON.parse(atob(idToken.split(".")[1])); // Décodage de la partie payload (base64)
+            document.getElementById("userName").textContent = payload.name;
+            document.getElementById("loginBtn").style.display = "none";
+            document.getElementById("userInfo").style.display = "block";
+          }
+        });
+      });
+
+      function logout() {
+        document.getElementById("loginBtn").style.display = "block";
+        document.getElementById("userInfo").style.display = "none";
+      }
+    </script>
+  </body>
+</html>
+```
+
+
+
