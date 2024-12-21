@@ -227,7 +227,7 @@ Ce guide explique comment configurer l'authentification Google OAuth 2.0 et impl
 
 ## Connexion Google avec ID Token via Popup
 
-Ce guide explique comment mettre en place une authentification Google dans une application web en utilisant une fenêtre popup. Le processus utilise un `id_token` pour récupérer les informations de l'utilisateur après une connexion réussie.
+L'ID token est un jeton JWT (JSON Web Token) utilisé dans le cadre de l'authentification OAuth 2.0 pour fournir des informations sur l'utilisateur qui s'est authentifié. Contrairement à un access token, qui est utilisé pour accéder aux ressources d'une API, un ID token contient des informations d'identité (comme le nom, l'email et l'image de profil) dans sa partie payload. Il permet de vérifier que l'utilisateur est bien celui qu'il prétend être sans avoir à effectuer des appels supplémentaires aux API externes, ce qui simplifie et sécurise le processus d'authentification.
 
 ```javascript
 <!DOCTYPE html>
