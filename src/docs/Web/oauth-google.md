@@ -290,6 +290,28 @@ L'ID token est un jeton JWT (JSON Web Token) utilisé dans le cadre de l'authent
   </body>
 </html>
 ```
+Exemple de décodage de l'Id token
 
+```js
+// Fonction pour décoder un JWT (séparer la partie payload et la décoder)
+function decodeJWT(token) {
+  const base64Url = token.split('.')[1];  // Partie payload du JWT
+  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/'); // Correction des caractères
+  const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+  }).join(''));
+
+  return JSON.parse(jsonPayload);
+}
+
+// ID Token (exemple, remplacez-le par le vôtre)
+const idToken = "VOTRE_ID_TOKEN"; 
+
+// Décoder l'ID token pour obtenir les informations
+const decoded = decodeJWT(idToken);
+
+// L'identifiant utilisateur se trouve dans le champ 'sub'
+console.log("Identifiant utilisateur : ", decoded.sub);  // 'sub' contient l'ID unique de l'utilisateur
+```
 
 
