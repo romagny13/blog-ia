@@ -607,6 +607,18 @@ Voici le code complet pour intégrer un lecteur YouTube.
 - **`onPlayerReady`** : Appelé lorsque le lecteur est prêt.
 - **`onPlayerStateChange`** : Détecte les changements d'état, par exemple, lorsque la vidéo se termine (`YT.PlayerState.ENDED`).
 
+#### 6. Changer la video d'un lecteur existant
+
+Il est possible de réutiliser un player.
+
+```js
+function changeVideo(videoId) {
+  if (player && player.loadVideoById) {
+    player.loadVideoById(videoId);
+    console.log(`Vidéo changée : ${videoId}`);
+  }
+}
+```
 ---
 
 ### Comment Modifier le Code
@@ -629,3 +641,5 @@ Voici le code complet pour intégrer un lecteur YouTube.
 1. **Responsive Design** : Le lecteur est adapté à tous les appareils grâce au CSS.
 2. **Respect des règles de YouTube** : L'utilisation de l'API doit respecter les conditions d'utilisation de YouTube.
 3. **Compatibilité Navigateur** : Assurez-vous que votre site est compatible avec les navigateurs modernes.
+
+
