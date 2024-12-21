@@ -17,22 +17,26 @@ Ce guide explique comment configurer l'authentification Google OAuth 2.0 et impl
    Rendez-vous sur [Google Cloud Console](https://console.cloud.google.com/).
 
 2. **Créer un projet**
+
    - Créez un nouveau projet et sélectionnez-le.
 
 3. **Activer l'API Google+ API**
+
    - Allez dans la section **API et services**.
    - Cliquez sur **Activer les API et services**.
    - Recherchez et activez **Google+ API**.
 
 4. **Configurer l'écran de consentement**
+
    - Remplissez les informations requises pour l'écran de consentement.
 
 5. **Créer des identifiants OAuth 2.0**
+
    - Allez dans **Identifiants** > **Créer des identifiants** > **ID client OAuth**.
    - Choisissez **Application Web**.
-   - Ajoutez des **URI de redirection autorisés**, par exemple :
+   - Ajoutez des **URI de redirection autorisés**, par exemple (pour Live Server):
      - `http://127.0.0.1:5500/popup.html`
-     - `http://127.0.0.1:5500/callback.html` (pour Live Server)
+     - Ou `http://127.0.0.1:5500/callback.html`
    - Cliquez sur **Créer**.
 
 6. **Copier le client ID**
@@ -66,8 +70,14 @@ Ce guide explique comment configurer l'authentification Google OAuth 2.0 et impl
       const SCOPE = "email profile";
 
       document.getElementById("loginBtn").addEventListener("click", () => {
-        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${SCOPE}`;
-        const popup = window.open(authUrl, "GoogleLogin", "width=600,height=600");
+        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(
+          REDIRECT_URI
+        )}&scope=${SCOPE}`;
+        const popup = window.open(
+          authUrl,
+          "GoogleLogin",
+          "width=600,height=600"
+        );
 
         window.addEventListener("message", (event) => {
           if (event.origin !== window.location.origin) {
@@ -89,7 +99,10 @@ Ce guide explique comment configurer l'authentification Google OAuth 2.0 et impl
                 document.getElementById("userInfo").style.display = "block";
               })
               .catch((error) =>
-                console.error("Erreur lors de la récupération des infos utilisateur :", error)
+                console.error(
+                  "Erreur lors de la récupération des infos utilisateur :",
+                  error
+                )
               );
           }
         });
@@ -150,7 +163,9 @@ Ce guide explique comment configurer l'authentification Google OAuth 2.0 et impl
       const SCOPE = "email profile";
 
       document.getElementById("loginBtn").addEventListener("click", () => {
-        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${SCOPE}`;
+        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(
+          REDIRECT_URI
+        )}&scope=${SCOPE}`;
         window.location.href = authUrl; // Redirige l'utilisateur vers Google
       });
     </script>
@@ -163,46 +178,49 @@ Ce guide explique comment configurer l'authentification Google OAuth 2.0 et impl
 ```html
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Callback - Google Auth</title>
-</head>
-<body>
-  <h1>Traitement de la connexion...</h1>
-  <p id="status">Connexion en cours...</p>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Callback - Google Auth</title>
+  </head>
+  <body>
+    <h1>Traitement de la connexion...</h1>
+    <p id="status">Connexion en cours...</p>
 
-  <script>
-    const hash = window.location.hash.substring(1); // Extrait tout après le '#'
-    const params = new URLSearchParams(hash);
-    const accessToken = params.get("access_token");
+    <script>
+      const hash = window.location.hash.substring(1); // Extrait tout après le '#'
+      const params = new URLSearchParams(hash);
+      const accessToken = params.get("access_token");
 
-    if (accessToken) {
-      fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      })
-        .then((response) => response.json())
-        .then((user) => {
-          document.body.innerHTML = `
+      if (accessToken) {
+        fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        })
+          .then((response) => response.json())
+          .then((user) => {
+            document.body.innerHTML = `
             <h1>Connecté en tant que : ${user.name}</h1>
             <p>Email : ${user.email}</p>
             <img src="${user.picture}" alt="Photo de profil" style="border-radius: 50%; width: 100px; height: 100px;" />
             <button onclick="logout()">Déconnexion</button>
           `;
-        })
-        .catch((error) => {
-          console.error("Erreur lors de la récupération des informations utilisateur :", error);
-          document.getElementById("status").textContent = "Erreur lors de la connexion.";
-        });
-    } else {
-      document.getElementById("status").textContent = "Aucun token trouvé.";
-    }
+          })
+          .catch((error) => {
+            console.error(
+              "Erreur lors de la récupération des informations utilisateur :",
+              error
+            );
+            document.getElementById("status").textContent =
+              "Erreur lors de la connexion.";
+          });
+      } else {
+        document.getElementById("status").textContent = "Aucun token trouvé.";
+      }
 
-    function logout() {
-      window.location.href = "redirect.html"; // Retour à la page principale
-    }
-  </script>
-</body>
+      function logout() {
+        window.location.href = "redirect.html"; // Retour à la page principale
+      }
+    </script>
+  </body>
 </html>
 ```
-
