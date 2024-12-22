@@ -170,7 +170,7 @@ console.log("Document deleted successfully!");
 
 ---
 
-## Cas spécifiques et bonnes pratiques
+## 5. Cas spécifiques et bonnes pratiques
 
 ### 1. Gestion des erreurs
 
@@ -215,9 +215,98 @@ try {
 
 Si vous utilisez des requêtes complexes avec plusieurs conditions (e.g., `where`), pensez à créer des index personnalisés dans la console Firebase.
 
+
+### 4. Différence entre `doc()` et `getDoc()` dans Firestore
+
+Dans Firestore, `doc()` et `getDoc()` sont deux fonctions essentielles, mais elles ont des rôles distincts. Cette page explique leur différence et comment les utiliser dans des cas spécifiques.
+
+#### 1. Fonction `doc()`
+
+La fonction `doc()` permet de **créer une référence** à un document spécifique dans une collection de Firestore. Elle ne permet pas de récupérer les données du document, mais fournit une référence pour effectuer des actions sur ce document (lecture, mise à jour, suppression).
+
+##### Syntaxe
+```javascript
+const userRef = doc(db, "users", userId);
+```
+
+- **Paramètres** :
+  - `db` : L'instance de votre base de données Firestore.
+  - `"users"` : Le nom de la collection où le document est stocké.
+  - `userId` : L'ID unique du document dans la collection.
+
+##### Cas d'utilisation spécifique
+Vous utilisez `doc()` lorsque vous avez besoin de créer une référence à un document pour y effectuer une opération ultérieure (lecture, mise à jour, suppression). Par exemple, vous pouvez l'utiliser pour préparer la mise à jour des informations d'un utilisateur :
+
+```javascript
+const userRef = doc(db, "users", userId); // Créer une référence à l'utilisateur avec userId
+```
+
 ---
 
-## Conclusion
+#### 2. Fonction `getDoc()`
 
-Ce guide couvre les bases des opérations CRUD avec Firestore en JavaScript, ainsi que des cas spécifiques comme la suppression de champs ou l'utilisation de transactions. Firestore est un outil puissant et flexible pour gérer vos données. N'hésitez pas à explorer la [documentation officielle de Firestore](https://firebase.google.com/docs/firestore) pour en savoir plus.
+La fonction `getDoc()` permet de **récupérer le contenu d'un document** dans Firestore. Elle prend en paramètre une référence de document créée avec `doc()` et retourne un **DocumentSnapshot**, qui contient les données du document.
 
+##### Syntaxe
+```javascript
+const docSnap = await getDoc(userRef);
+```
+
+- **Paramètres** :
+  - `userRef` : La référence au document, obtenue via `doc()`.
+
+##### Cas d'utilisation spécifique
+Vous utilisez `getDoc()` pour récupérer les données réelles d'un document Firestore. Par exemple, vous pouvez l'utiliser pour obtenir les informations d'un utilisateur basé sur son `userId` :
+
+```javascript
+const docSnap = await getDoc(userRef); // Récupérer les données du document de l'utilisateur
+if (docSnap.exists()) {
+  console.log(docSnap.data()); // Affiche les données de l'utilisateur
+} else {
+  console.log("Aucun utilisateur trouvé avec cet ID");
+}
+```
+
+---
+
+### Résumé des différences
+
+| Fonction     | Description                                             | Cas d'utilisation                                                                 |
+|--------------|---------------------------------------------------------|----------------------------------------------------------------------------------|
+| `doc()`      | Crée une référence à un document dans Firestore         | Utilisé pour préparer des actions sur un document, comme une mise à jour.        |
+| `getDoc()`   | Récupère les données d'un document en utilisant une référence | Utilisé pour lire les données d'un document (par exemple, récupérer les infos utilisateur). |
+
+---
+
+### Exemple Complet : Récupérer les Informations d'un Utilisateur
+
+Imaginons que vous souhaitiez récupérer les informations d'un utilisateur en utilisant son `userId`. Voici comment procéder avec `doc()` et `getDoc()` :
+
+#### Étape 1 : Créer une référence au document
+```javascript
+const userRef = doc(db, "users", userId); // Crée une référence au document de l'utilisateur
+```
+
+#### Étape 2 : Récupérer les données du document
+```javascript
+try {
+  const docSnap = await getDoc(userRef); // Récupère le document
+  if (docSnap.exists()) {
+    console.log("Données de l'utilisateur :", docSnap.data()); // Affiche les données
+  } else {
+    console.log("Aucun utilisateur trouvé avec cet ID");
+  }
+} catch (error) {
+  console.error("Erreur lors de la récupération des données :", error);
+}
+```
+
+---
+
+### Conclusion
+
+- **`doc()`** est utilisé pour obtenir une référence à un document sans récupérer ses données.
+- **`getDoc()`** est utilisé pour récupérer les données du document en utilisant cette référence.
+
+Ces deux fonctions travaillent ensemble pour permettre des opérations de lecture et de mise à jour dans Firestore.
+```
