@@ -18,16 +18,17 @@ Voici quelques bonnes pratiques pour rédiger des messages de commit dans un env
 
 Quand on veut spécifier que l'on a modifié un fichier, et ce que l'on a ajouté par exemple:
 
-1. **"Update fichier1: add NewSectionName"**  
-   - Cela reste court et précis. Le message indique clairement qu'une section "NewSectionName" a été ajoutée à "fichier1".
-   
-2. **"Update fichier1 to add NewSectionName"**  
-   - Ce message explique que "fichier1" a été mis à jour pour inclure "NewSectionName". Il est un peu plus détaillé, tout en restant simple.
+1. **"Update file1: add NewSectionName"**
+   - Cela reste court et précis. Le message indique clairement qu'une section "NewSectionName" a été ajoutée à "file1".
+2. **"Update file1 to add NewSectionName"**
 
-3. **"Add NewSectionName to fichier1"**  
+   - Ce message explique que "file1" a été mis à jour pour inclure "NewSectionName". Il est un peu plus détaillé, tout en restant simple.
+
+3. **"Add NewSectionName to file1"**
+
    - Si l'accent est principalement sur l'ajout de la section, cela peut être plus direct et plus clair. Vous mettez l'action principale en premier.
 
-4. **"Update fichier1: introduce NewSectionName"**  
+4. **"Update file1: introduce NewSectionName"**
    - Si l'ajout de la section implique aussi une nouvelle fonctionnalité ou une structure importante, "introduce" peut être un verbe plus adapté.
 
 ### 2. **Être concis mais précis**
