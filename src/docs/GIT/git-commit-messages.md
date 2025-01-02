@@ -13,6 +13,8 @@ Voici quelques bonnes pratiques pour rédiger des messages de commit dans un env
 
 - Ex : `Add`, `Fix`, `Update`, `Refactor`, `Remove`, `Improve`, etc.
 - Cela donne une idée claire de ce qui a été fait.
+- Si vous suivez des pratiques générales de bonne rédaction de messages de commit, l'usage de **majuscule en début de message** et **verbale à l'infinitif (comme "Add")** est recommandé pour garder une forme impérative cohérente.
+- Cependant, le plus important reste la **cohérence au sein de votre équipe ou projet**. Si votre équipe utilise une convention différente (par exemple, pas de majuscule ou utilise "Added" à la place de "Add"), il est préférable de suivre ce style pour garantir l'uniformité.
 
 ### 2. **Être concis mais précis**
 
