@@ -142,4 +142,66 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
 ---
 
+### Comment exécuter un script PowerShell facilement en double-cliquant
+
+Il est possible de lancer un script PowerShell `.ps1` en double-cliquant soit sur le script lui-même, soit sur un raccourci qui exécuterait ce script. Voici deux solutions pour cela :
+
+#### 1. **Double-cliquer sur le script `.ps1` directement**
+Sous certaines configurations, il est possible de lancer directement un script `.ps1` en double-cliquant, mais cela dépend des paramètres de votre système et de la politique d'exécution des scripts PowerShell.
+
+##### Étapes à suivre :
+
+1. **Configurer la politique d'exécution des scripts** : Par défaut, Windows empêche l'exécution de scripts PowerShell pour des raisons de sécurité. Vous devez modifier la politique d'exécution pour permettre l'exécution des scripts locaux signés ou non signés.
+   
+   Ouvrez PowerShell en mode administrateur et exécutez la commande suivante pour autoriser l'exécution des scripts locaux :
+   ```powershell
+   Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+   ```
+   Cette commande permet d'exécuter des scripts non signés tant qu'ils viennent de votre ordinateur.
+
+2. **Associer le fichier `.ps1` à PowerShell** :
+   Si le script ne se lance pas automatiquement en double-cliquant, vous devrez peut-être associer les fichiers `.ps1` à PowerShell. Voici comment faire :
+   
+   - Ouvrez l'Explorateur de fichiers et faites un clic droit sur le fichier `.ps1`.
+   - Choisissez **Ouvrir avec** puis **Choisir une autre application**.
+   - Sélectionnez **PowerShell** et cochez **Toujours utiliser cette application pour ouvrir les fichiers .ps1**.
+   
+   Cela permet à PowerShell d'être automatiquement utilisé pour ouvrir les fichiers `.ps1`.
+
+#### 2. **Créer un raccourci pour exécuter le script `.ps1`**
+Si vous souhaitez avoir plus de contrôle, vous pouvez créer un raccourci qui exécute le script `.ps1` via PowerShell.
+
+##### Étapes pour créer un raccourci :
+
+1. **Créer un raccourci** :
+   - Faites un clic droit sur le bureau ou dans un dossier et choisissez **Nouveau** > **Raccourci**.
+   - Dans la boîte de dialogue "Emplacement de l'élément", entrez la commande suivante :
+     ```plaintext
+     powershell.exe -ExecutionPolicy Bypass -File "C:\chemin\vers\ton\script.ps1"
+     ```
+     Remplacez `C:\chemin\vers\ton\script.ps1` par le chemin complet vers votre fichier `.ps1`.
+
+2. **Nommer le raccourci** : Donnez un nom à votre raccourci, puis cliquez sur **Terminer**.
+
+##### Explication des options :
+- `-ExecutionPolicy Bypass` : Permet d'exécuter le script même si la politique d'exécution est restrictive (vous pouvez remplacer par `RemoteSigned` si nécessaire).
+- `-File` : Spécifie le chemin du fichier `.ps1` à exécuter.
+
+#### 3. **Option supplémentaire : Créer un fichier `.bat` pour lancer le script**
+Si vous préférez utiliser un fichier `.bat` pour exécuter le script PowerShell, vous pouvez créer un fichier batch qui lance votre script PowerShell.
+
+##### Exemple de fichier `.bat` :
+Créez un fichier `.bat` avec le contenu suivant :
+```batch
+@echo off
+powershell.exe -ExecutionPolicy Bypass -File "C:\chemin\vers\ton\script.ps1"
+```
+
+Cela permet d'exécuter le script PowerShell avec un double-clic sur le fichier `.bat`.
+
+#### Résumé des solutions :
+- **Double-cliquer directement sur le `.ps1`** (après avoir modifié la politique d'exécution et configuré l'association de fichiers).
+- **Créer un raccourci** vers `powershell.exe` avec les arguments nécessaires pour exécuter le script.
+- **Utiliser un fichier `.bat`** qui exécute le script PowerShell.
+
 Vous pouvez maintenant utiliser ces deux méthodes (batch et PowerShell) pour automatiser vos tâches et gagner en efficacité !
