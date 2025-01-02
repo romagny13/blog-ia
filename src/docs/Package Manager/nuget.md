@@ -27,6 +27,10 @@ Si vous n’avez pas NuGet CLI, téléchargez-le ici : [NuGet CLI](https://www.n
 
 ---
 
+Voici la section mise à jour, avec les informations sur la configuration via le fichier `.csproj` pour générer un package NuGet à la compilation, ainsi que les options `GeneratePackageOnBuild` et `IsPackable` :
+
+---
+
 ### 2. Créer un Package NuGet avec Visual Studio
 
 1. **Configurer le projet** :
@@ -35,14 +39,43 @@ Si vous n’avez pas NuGet CLI, téléchargez-le ici : [NuGet CLI](https://www.n
    - Cliquez avec le bouton droit sur le projet et sélectionnez **Propriétés**.
    - Sous l'onglet **Général**, assurez-vous que toutes les informations sur l'assemblage (nom, version, etc.) sont correctement renseignées.
 
-2. **Configurer le Packaging** :
+2. **Configurer le Packaging dans le fichier `.csproj`** :
+   Vous pouvez configurer le fichier `.csproj` pour qu'il génère automatiquement le package NuGet lors de la compilation. Cela se fait en ajoutant les propriétés suivantes dans le fichier `.csproj` de votre projet :
 
-   - Allez à l'onglet **Package NuGet**.
-   - Remplissez les champs obligatoires tels que le titre, la description, les auteurs et l’URL du projet.
-   - Activez l’option **Générer un package NuGet à la compilation**.
+   - **`<GeneratePackageOnBuild>`** : Cette propriété permet de générer un package NuGet à chaque compilation du projet.
+   - **`<IsPackable>`** : Spécifie si le projet peut être packagé ou non.
 
-3. **Compiler le projet** :
-   - Lancez une compilation (Release de préférence). Le package sera généré dans le dossier `bin\Release`.
+   Exemple de fichier `.csproj` :
+
+   ```xml
+   <Project Sdk="Microsoft.NET.Sdk">
+
+     <PropertyGroup>
+       <!-- Activer la génération automatique du package NuGet à la compilation -->
+       <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+
+       <!-- Spécifier le nom du package et sa version -->
+       <PackageId>MonPackage</PackageId>
+       <Version>1.0.0</Version>
+       <Authors>MonNom</Authors>
+       <Company>MaCompagnie</Company>
+
+       <!-- Spécifier le chemin de sortie pour le package -->
+       <PackageOutputPath>./nupkgs</PackageOutputPath>
+     </PropertyGroup>
+
+   </Project>
+   ```
+
+3. **Configurer le Packaging via l'interface de Visual Studio** :
+   Si vous préférez utiliser l'interface de Visual Studio, vous pouvez aussi configurer les options suivantes dans l'onglet **Package NuGet** :
+
+   - Remplissez les champs obligatoires tels que le titre, la description, les auteurs et l'URL du projet.
+   - Activez l'option **Générer un package NuGet à la compilation** (cela ajoutera en interne la propriété `<GeneratePackageOnBuild>`).
+
+4. **Compiler le projet** :
+   - Lancez une compilation en mode **Release** (de préférence) pour générer le package. Le package sera généré dans le dossier `bin\Release` par défaut.
+   - Si vous avez configuré la sortie personnalisée via `PackageOutputPath`, le package sera généré dans ce dossier.
 
 ---
 
