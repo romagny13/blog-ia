@@ -20,7 +20,7 @@ start ["<titre>"] [<chemin_vers_application_ou_fichier>] [<paramètres>]
 ### Explication des paramètres
 
 - **`"<titre>"`** : Optionnel. Spécifie le titre de la fenêtre de l'invite de commandes. Utilisez des guillemets vides (`""`) si aucun titre n'est nécessaire, en particulier si le chemin ou l'application contient des espaces.
-- **`<chemin_vers_application_ou_fichier>`** : Obligatoire. Le chemin complet vers l'application ou le fichier que vous souhaitez ouvrir. Si le chemin contient des espaces, placez-le entre guillemets.
+- **`<chemin_vers_application_ou_fichier>`** : Obligatoire. Le chemin complet vers l'application ou le fichier que vous souhaitez ouvrir. Si le chemin contient des espaces, placez-le entre guillemets. Il est aussi possible de spécifier simplement le nom de l'application si elle est dans le `PATH` du système (par exemple, `"chrome.exe"` ou `"notepad.exe"`), dans ce cas Windows cherchera l'exécutable dans les répertoires définis.
 - **`<paramètres>`** : Optionnel. Ce sont des arguments supplémentaires passés à l'application ou au fichier à ouvrir.
 
 ## Lancer des applications et des fichiers avec un fichier `.bat`
@@ -57,7 +57,7 @@ start "" "C:\Program Files\Google\Chrome\Application\chrome.exe" "https://www.go
 ### Remarques importantes
 
 - Utilisez toujours des guillemets (`""`) autour des chemins contenant des espaces.
-- Si vous ne spécifiez pas de chemin d'application, Windows utilisera le programme par défaut associé au type de fichier.
+- Si vous ne spécifiez pas de chemin complet et que l'application est dans le `PATH`, vous pouvez simplement indiquer son nom. Par exemple, pour ouvrir Chrome, vous pouvez écrire `start "" "chrome.exe"` au lieu du chemin complet `"C:\Program Files\Google\Chrome\Application\chrome.exe"`. Windows recherchera alors `chrome.exe` dans les répertoires du `PATH`.
 - Le premier argument (`""`) est nécessaire pour éviter que le chemin soit interprété comme le titre.
 
 ## Créer et exécuter un fichier `.bat`
@@ -136,7 +136,6 @@ Start-Process -FilePath "notepad.exe" -ArgumentList "C:\Users\User\Desktop\notes
    ```
 
 **Remarque** : Vous devrez peut-être modifier la politique d'exécution avec la commande suivante :
-
 ```powershell
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 ```
