@@ -40,6 +40,20 @@ start "" "D:\MyDocuments\Videos\videoplayback.m4a"
 2. `start "" "C:\Windows\System32\notepad.exe" "C:\Users\User\Documents\example.txt"` : Ouvre le Bloc-notes et charge un fichier texte spécifique.
 3. `start "" "D:\MyDocuments\Videos\videoplayback.m4a"` : Lit un fichier audio avec le lecteur multimédia par défaut.
 
+### Lancer Chrome avec plusieurs onglets
+
+Pour ouvrir plusieurs onglets dans Chrome, ajoutez chaque URL comme paramètre séparé :
+
+```batch
+@echo off
+start "" "C:\Program Files\Google\Chrome\Application\chrome.exe" "https://www.google.com" "https://www.github.com" "https://www.stackoverflow.com"
+```
+
+#### Explication
+
+- Chaque URL est ajoutée comme argument après le chemin de l'exécutable Chrome.
+- Chrome ouvrira chaque URL dans un onglet séparé.
+
 ### Remarques importantes
 
 - Utilisez toujours des guillemets (`""`) autour des chemins contenant des espaces.
@@ -90,12 +104,18 @@ Start-Process -FilePath "notepad.exe" -ArgumentList "C:\Users\User\Documents\exa
 Invoke-Item -Path "D:\MyDocuments\Videos\videoplayback.m4a"
 ```
 
-### Explication des commandes
+### Lancer Chrome avec plusieurs onglets
 
-1. `Start-Process` : Lance un processus (application ou fichier).
-   - **`-FilePath`** : Spécifie le chemin vers l'application ou le fichier.
-   - **`-ArgumentList`** : Fournit des arguments supplémentaires pour le processus.
-2. `Invoke-Item` : Ouvre un fichier avec l'application par défaut.
+Pour ouvrir plusieurs onglets dans Chrome avec PowerShell :
+
+```powershell
+Start-Process -FilePath "C:\Program Files\Google\Chrome\Application\chrome.exe" -ArgumentList "https://www.google.com", "https://www.github.com", "https://www.stackoverflow.com"
+```
+
+#### Explication
+
+- `-ArgumentList` accepte un tableau d'arguments, chaque URL est ajoutée comme élément du tableau.
+- Chrome ouvrira chaque URL dans un onglet séparé.
 
 ### Exemple avancé
 
