@@ -35,18 +35,24 @@ Affiche une liste des commandes disponibles et leurs descriptions.
 
 Voici un tableau des types de projets créables de base avec la CLI .NET :
 
-| Type de Projet          | Commande                  | Description                                   |
-| ----------------------- | ------------------------- | --------------------------------------------- |
-| Console                 | `dotnet new console`      | Application console de base.                  |
-| Bibliothèque de classes | `dotnet new classlib`     | Crée une bibliothèque réutilisable.           |
-| Web API                 | `dotnet new webapi`       | Crée une API REST avec ASP.NET Core.          |
-| MVC                     | `dotnet new mvc`          | Application web avec ASP.NET Core MVC.        |
-| Razor Pages             | `dotnet new razor`        | Application web avec des Razor Pages.         |
-| Angular                 | `dotnet new angular`      | Application Angular avec ASP.NET Core.        |
-| React                   | `dotnet new react`        | Application React avec ASP.NET Core.          |
-| Blazor Server           | `dotnet new blazorserver` | Application Blazor côté serveur.              |
-| Blazor WebAssembly      | `dotnet new blazorwasm`   | Application Blazor côté client (WebAssembly). |
-| Tests Unitaires         | `dotnet new xunit`        | Projet pour les tests unitaires avec xUnit.   |
+| Type de Projet                       | Commande                         | Description                                         |
+| ------------------------------------ | -------------------------------- | --------------------------------------------------- |
+| Application Console                  | `dotnet new console`             | Application console simple.                         |
+| Bibliothèque de classes (Classlib)   | `dotnet new classlib`            | Crée une bibliothèque de classes.                   |
+| Application WPF                      | `dotnet new wpf`                 | Application WPF pour Windows.                       |
+| Bibliothèque de classes WPF          | `dotnet new wpflib`              | Crée une bibliothèque de classes WPF.               |
+| Bibliothèque de Contrôles WPF        | `dotnet new wpfcustomcontrollib` | Crée une bibliothèque de contrôles WPF.             |
+| Contrôles Utilisateur WPF            | `dotnet new wpfusercontrollib`   | Crée une bibliothèque de contrôles utilisateur WPF. |
+| Application Windows Forms (WinForms) | `dotnet new winforms`            | Application Windows Forms.                          |
+| Bibliothèque de classes WinForms     | `dotnet new winformslib`         | Crée une bibliothèque de classes WinForms.          |
+| Web API                              | `dotnet new webapi`              | Crée une API REST avec ASP.NET Core.                |
+| MVC                                  | `dotnet new mvc`                 | Application web avec ASP.NET Core MVC.              |
+| Razor Pages                          | `dotnet new razor`               | Application web avec des Razor Pages.               |
+| Angular                              | `dotnet new angular`             | Application Angular avec ASP.NET Core.              |
+| React                                | `dotnet new react`               | Application React avec ASP.NET Core.                |
+| Blazor Server                        | `dotnet new blazorserver`        | Application Blazor côté serveur.                    |
+| Blazor WebAssembly                   | `dotnet new blazorwasm`          | Application Blazor côté client (WebAssembly).       |
+| Tests Unitaires                      | `dotnet new xunit`               | Projet pour les tests unitaires avec xUnit.         |
 
 Pour une liste complète et à jour, consultez la [documentation officielle](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-new).
 
