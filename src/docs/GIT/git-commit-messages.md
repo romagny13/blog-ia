@@ -16,6 +16,20 @@ Voici quelques bonnes pratiques pour rédiger des messages de commit dans un env
 - Si vous suivez des pratiques générales de bonne rédaction de messages de commit, l'usage de **majuscule en début de message** et **verbale à l'infinitif (comme "Add")** est recommandé pour garder une forme impérative cohérente.
 - Cependant, le plus important reste la **cohérence au sein de votre équipe ou projet**. Si votre équipe utilise une convention différente (par exemple, pas de majuscule ou utilise "Added" à la place de "Add"), il est préférable de suivre ce style pour garantir l'uniformité.
 
+Quand on veut spécifier que l'on a modifié un fichier, et ce que l'on a ajouté par exemple:
+
+1. **"Update fichier1: add NewSectionName"**  
+   - Cela reste court et précis. Le message indique clairement qu'une section "NewSectionName" a été ajoutée à "fichier1".
+   
+2. **"Update fichier1 to add NewSectionName"**  
+   - Ce message explique que "fichier1" a été mis à jour pour inclure "NewSectionName". Il est un peu plus détaillé, tout en restant simple.
+
+3. **"Add NewSectionName to fichier1"**  
+   - Si l'accent est principalement sur l'ajout de la section, cela peut être plus direct et plus clair. Vous mettez l'action principale en premier.
+
+4. **"Update fichier1: introduce NewSectionName"**  
+   - Si l'ajout de la section implique aussi une nouvelle fonctionnalité ou une structure importante, "introduce" peut être un verbe plus adapté.
+
 ### 2. **Être concis mais précis**
 
 - Le message doit être court (idéalement 50-72 caractères pour la première ligne) mais suffisamment descriptif.
