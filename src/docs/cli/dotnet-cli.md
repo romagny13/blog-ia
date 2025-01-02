@@ -277,9 +277,123 @@ Lance tous les tests unitaires définis dans le projet.
 
 ---
 
+## Exemple d'utilisation de la CLI .NET : Organisation d'une Solution
+
+Ce guide montre comment créer une solution avec plusieurs projets, organiser les dossiers, ajouter des dépendances entre projets, gérer des packages NuGet et mettre à jour les packages NuGet périmés.
+
+### Étapes
+
+#### 1. Créer une solution
+Pour commencer, créez une solution qui contiendra vos projets.
+```bash
+mkdir MonProjet
+cd MonProjet
+dotnet new sln -n MonProjet
+```
+
+#### 2. Créer et organiser les projets
+Créez un dossier `src` pour contenir les projets, puis ajoutez différents types de projets à la solution.
+```bash
+mkdir src
+cd src
+
+# Créer un projet console
+mkdir Application.Console
+cd Application.Console
+dotnet new console -n Application.Console
+cd ..
+
+# Créer une bibliothèque de classes
+mkdir Domain
+cd Domain
+dotnet new classlib -n Domain
+cd ..
+
+# Créer une bibliothèque de classes pour les services
+mkdir Application.Services
+cd Application.Services
+dotnet new classlib -n Application.Services
+cd ..
+```
+
+#### 3. Ajouter les projets à la solution
+Une fois les projets créés, ajoutez-les à la solution :
+```bash
+cd ..
+
+dotnet sln add src/Application.Console/Application.Console.csproj
+dotnet sln add src/Domain/Domain.csproj
+dotnet sln add src/Application.Services/Application.Services.csproj
+```
+
+#### 4. Ajouter des références entre projets
+Ajoutez des dépendances entre les projets :
+```bash
+# La bibliothèque de services dépend du domaine
+cd src/Application.Services
+dotnet add reference ../Domain/Domain.csproj
+
+# L'application console dépend de la bibliothèque de services
+cd ../Application.Console
+dotnet add reference ../Application.Services/Application.Services.csproj
+```
+
+#### 5. Ajouter un package NuGet
+Ajoutez un package NuGet (par exemple, `Newtonsoft.Json`) à un projet :
+```bash
+cd src/Application.Console
+dotnet add package Newtonsoft.Json
+```
+
+#### 6. Vérifier les packages installés
+Vous pouvez vérifier les packages installés avec la commande suivante :
+```bash
+dotnet list package
+```
+
+#### 7. Mettre à jour les packages NuGet périmés
+Pour mettre à jour les packages NuGet périmés :
+```bash
+cd src/Application.Console
+dotnet list package --outdated
+
+dotnet add package Newtonsoft.Json --version <nouvelle_version>
+```
+Ou utilisez :
+```bash
+dotnet restore --force-evaluate
+```
+
+#### 8. Exécuter le projet console
+Pour tester votre application :
+```bash
+cd src/Application.Console
+dotnet run
+```
+
+#### 9. Arborescence finale
+Voici à quoi ressemble la structure de dossiers après l'organisation :
+```
+MonProjet/
+├── MonProjet.sln
+└── src/
+    ├── Application.Console/
+    │   ├── Application.Console.csproj
+    │   ├── Program.cs
+    ├── Application.Services/
+    │   ├── Application.Services.csproj
+    │   └── ...
+    └── Domain/
+        ├── Domain.csproj
+        └── ...
+```
+
+Avec ces étapes, vous avez une solution bien organisée et prête pour le développement avec la CLI .NET.
+
 ## Ressources Supplémentaires
 
 - [Documentation officielle de .NET](https://docs.microsoft.com/dotnet/)
 - [Commandes CLI avancées](https://learn.microsoft.com/en-us/dotnet/core/tools/)
 
 Ce guide fournit un point de départ pour explorer la CLI .NET et l'utiliser efficacement dans vos projets. N'hésitez pas à personnaliser ces commandes selon vos besoins spécifiques !
+
