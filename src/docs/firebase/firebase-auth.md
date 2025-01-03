@@ -1,3 +1,10 @@
+---
+category: Firebase
+title: Firebase Auth
+date: 2024-12-22
+author: Romagny13
+---
+
 # Guide : Authentication avec Firebase, JavaScript et React
 
 Ce guide vous explique comment mettre en place une solution d'authentification complète avec Firebase, en gérant plusieurs fournisseurs (Google, Facebook, Email/Password, etc.) et en intégrant l'utilisateur actuel à votre application avec soit la Context API, soit Redux.
